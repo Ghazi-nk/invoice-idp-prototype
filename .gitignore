@@ -1,0 +1,22 @@
+# Ignore Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Ignore virtual environment
+.venv/
+
+# Ignore IntelliJ project files
+.idea/
+*.iml
+
+# Ignore environment files
+.env
+
+# Ignore generated outputs
+app/output/
+app/tmp/
+app/.env
+
+# Ignore Tesseract/OCR artifacts
+app/tmp/*.png
+app/tmp/*.txt
