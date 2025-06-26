@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Incoming Invoice",
+  "type": "object",
+  "properties": {
+    "invoice_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the invoice in format YYYY-MM-DD"
+    },
+    "vendor_name": {
+      "type": "string",
+      "description": "Name of the invoice issuer (vendor)"
+    },
+    "invoice_number": {
+      "type": "string",
+      "description": "Unique number of the invoice"
+    },
+    "recipient_name": {
+      "type": "string",
+      "description": "Name of the invoice recipient (used for company code enrichment)"
+    },
+    "gross_amount": {
+      "type": "number",
+      "description": "Total amount including taxes"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "Currency in ISO 4217 format (e.g., EUR, USD)"
+    },
+    "purchase_order_number": {
+      "type": "string",
+      "description": "Reference to the related purchase order"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Tax number or VAT ID of the vendor"
+    },
+    "iban": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}\\d{2}[A-Z0-9]{1,30}$",
+      "description": "IBAN of the vendor"
+    },
+    "tax_rate": {
+      "type": "number",
+      "description": "Applied tax rate in percent (e.g., 19.0)"
+    }
+  },
+  "additionalProperties": false
+}

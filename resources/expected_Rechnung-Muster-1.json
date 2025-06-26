@@ -1,0 +1,12 @@
+{
+  "invoice_date": "2015-08-07",
+  "vendor_name": "Firmenname",
+  "invoice_number": "2015-08-1001",
+  "recipient_name": "Mustermann GmbH",
+  "gross_amount": 430.78,
+  "currency": "EUR",
+  "purchase_order_number": null,
+  "tax_id": "12345613",
+  "iban": null,
+  "tax_rate": 19.0
+}

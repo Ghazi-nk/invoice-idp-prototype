@@ -15,7 +15,7 @@ __pycache__/
 # Ignore generated outputs
 app/output/
 app/tmp/
-app/.env
+app
 
 # Ignore Tesseract/OCR artifacts
 app/tmp/*.png
