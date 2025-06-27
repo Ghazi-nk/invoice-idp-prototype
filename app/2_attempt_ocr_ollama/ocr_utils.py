@@ -1,5 +1,7 @@
 import subprocess
 import os
+import json
+
 from config import TMP_DIR, TESSERACT_CMD
 
 def ocr_png_to_text(png_path: str) -> str:
@@ -9,4 +11,6 @@ def ocr_png_to_text(png_path: str) -> str:
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if not os.path.isfile(txt_path):
         raise RuntimeError(f"OCR-Text nicht gefunden: {txt_path}")
-    return open(txt_path, encoding="utf-8").read()
+
+    return json.dumps((open(txt_path, encoding="utf-8").read()), ensure_ascii=False)
+
