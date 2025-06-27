@@ -3,6 +3,8 @@ import sys
 import json
 import subprocess
 import requests
+from pathlib import Path
+
 from pdf2image import convert_from_path
 from PIL import Image
 from dotenv import load_dotenv
@@ -89,36 +91,16 @@ def ask_ollama_for_invoice_fields(ocr_text: str) -> dict:
     Send the OCR text to Ollama's /api/generate endpoint with an extraction prompt.
     Returns a Python dict containing the seven invoice fields.
     """
+    BASE_DIR = Path(__file__).resolve().parents[1]
+    PROMPT_FILE = BASE_DIR / "resources" / "Prompts" / "prompt.txt"
+    prompt_template: str = PROMPT_FILE.read_text(encoding="utf-8")
+
     prompt = f"""
-IMPORTANT: Do NOT output any chain of thought, <think> tags, or extra explanation.
-Return ONLY one valid JSON object and nothing else.
-
-Hier ist der OCR-Text einer deutschen Rechnung:
-\"\"\"
-{ocr_text}
-\"\"\"
-
-Extrahiere bitte exakt diese sieben Felder und gib NUR gültiges JSON zurück (keine zusätzlichen Erklärungen):
-
-- Rechnungsnummer
-- Rechnungsdatum
-- Verkäufer
-- Käufer
-- Leistungsbeschreibung (als JSON-Array, z.B. [\"Position 1\", \"Position 2\", …])
-- Gesamtbetrag
-- Umsatzsteuer
-
-Antwortformat (genau ein JSON-Objekt):
-{{
-  "Rechnungsnummer": "<hier>",
-  "Rechnungsdatum":  "<hier>",
-  "Verkäufer":       "<hier>",
-  "Käufer":          "<hier>",
-  "Leistungsbeschreibung": ["<hier>", "<hier>", …],
-  "Gesamtbetrag":    "<hier>",
-  "Umsatzsteuer":    "<hier>"
-}}
-"""
+    \"\"\"
+    {prompt_template}
+    {ocr_text}
+    \"\"\"
+   """
 
     body = {
         "model": OLLAMA_MODEL,
@@ -129,7 +111,7 @@ Antwortformat (genau ein JSON-Objekt):
     # Suppress SSL warnings (VPN handles certificate)
     requests.packages.urllib3.disable_warnings()
     try:
-        resp = requests.post(GENERATE_ENDPOINT, json=body, verify=False, timeout=60)
+        resp = requests.post(GENERATE_ENDPOINT, json=body, verify=False, timeout=600)
     except Exception as e:
         raise RuntimeError(f"Failed to connect to Ollama endpoint: {e}")
 
