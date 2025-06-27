@@ -15,7 +15,12 @@ __pycache__/
 # Ignore generated outputs
 app/output/
 app/tmp/
-app
+app/input/
+app/2_attempt_ocr_ollama/tmp/
+app/2_attempt_ocr_ollama/output/
+app/2_attempt_ocr_ollama/input/
+app/tmp/
+
 
 # Ignore Tesseract/OCR artifacts
 app/tmp/*.png
