@@ -21,7 +21,7 @@ def main():
             print(f"{out} existiert. Überspringe...")
             continue
 
-        result = process_single_pdf(pdf)
+        result = process_single_pdf(pdf, True)
         if result:
             with open(out, "w", encoding="utf-8") as f:
                 json.dump(result, f, ensure_ascii=False, indent=4)
