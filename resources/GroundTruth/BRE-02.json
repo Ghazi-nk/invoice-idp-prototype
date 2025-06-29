@@ -1,0 +1,12 @@
+{
+  "invoice_date": "06.11.2012",
+  "vendor_name": null,
+  "invoice_number": "Re-22/2012",
+  "recipient_name": "Best Pinsel KG",
+  "total_amount": 773.05,
+  "currency": "EUR",
+  "purchase_order_number": null,
+  "ust-id": null,
+  "iban": "1234567890",
+  "tax_rate": 19.0
+}

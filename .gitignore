@@ -13,13 +13,13 @@ __pycache__/
 .env
 
 # Ignore generated outputs
-app/output/
-app/tmp/
-app/input/
-app/2_attempt_ocr_ollama/tmp/
-app/2_attempt_ocr_ollama/output/
-app/2_attempt_ocr_ollama/input/
-app/tmp/
+app/results/output/
+app/results/tmp/
+app/results/input/
+app/ocr_ollama/tmp/
+app/ocr_ollama/output/
+app/ocr_ollama/input/
+app/results/tmp/
 
 
 # Ignore Tesseract/OCR artifacts
