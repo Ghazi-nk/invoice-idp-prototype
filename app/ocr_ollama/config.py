@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
+SAMPLE_PDF_PATH = os.getenv("SAMPLE_PDF_PATH")
+SAMPLE_PNG_PATH = os.getenv("SAMPLE_PNG_PATH")
+SAMPLE_TXT_PATH = os.getenv("SAMPLE_TXT_PATH")
+
 if not OLLAMA_BASE_URL:
     print("Error: OLLAMA_BASE_URL is not set.", file=sys.stderr)
     sys.exit(1)

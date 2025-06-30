@@ -1,0 +1,37 @@
+{"text": "US TER MAN A", "bbox": [712, 82, 805, 90]}
+{"text": "Abs .: Must erman n G mb H . | Hau pt stra Be 123 | 50 20 Sal z burg", "bbox": [106, 137, 458, 147]}
+{"text": "ABC G mb H", "bbox": [118, 155, 200, 164]}
+{"text": "Her r Wolf ram Sven s ke", "bbox": [119, 172, 282, 181]}
+{"text": "Bos ch stra Be 34", "bbox": [119, 190, 229, 199]}
+{"text": "4 47 87 BO CH UM", "bbox": [118, 208, 237, 216]}
+{"text": "DE UT S CH LAND", "bbox": [119, 225, 232, 234]}
+{"text": "Se ite : o e", "bbox": [597, 233, 631, 240]}
+{"text": "1", "bbox": [879, 233, 883, 239]}
+{"text": "Kund en N r .:", "bbox": [597, 248, 673, 256]}
+{"text": "16", "bbox": [871, 249, 885, 256]}
+{"text": "Dat um :", "bbox": [597, 265, 643, 272]}
+{"text": "13 . 10 . 2020", "bbox": [816, 265, 885, 272]}
+{"text": "Re chn ung Re - 9 / 2020", "bbox": [102, 285, 331, 301]}
+{"text": "v iel en D ank fur die Beau ft rag ung .", "bbox": [103, 306, 348, 317]}
+{"text": "E in zel pre is Ges am t pre is", "bbox": [681, 344, 882, 355]}
+{"text": "EUR", "bbox": [703, 359, 729, 366]}
+{"text": "EUR", "bbox": [829, 359, 855, 366]}
+{"text": "Ar be its st und e Me ister", "bbox": [307, 377, 453, 385]}
+{"text": "74 , 99", "bbox": [739, 377, 773, 386]}
+{"text": "62 , 49", "bbox": [868, 377, 902, 386]}
+{"text": "Ges am t Net to", "bbox": [104, 412, 195, 420]}
+{"text": "62 , 49", "bbox": [870, 412, 904, 422]}
+{"text": "z z gl . 19 , 00 % U St . a uf", "bbox": [104, 430, 245, 441]}
+{"text": "62 , 49", "bbox": [740, 431, 774, 440]}
+{"text": "12 , 50", "bbox": [870, 431, 904, 440]}
+{"text": "Ges am t ber tr ag", "bbox": [104, 464, 209, 475]}
+{"text": "74 , 99", "bbox": [864, 464, 902, 473]}
+{"text": "Z ahl ung s z iel : 14 T age", "bbox": [102, 480, 260, 491]}
+{"text": "B itte Uber we isen Sie den Re chn ung s bet rag a uf un ser K onto :", "bbox": [104, 512, 543, 523]}
+{"text": "IB AN : AT 49 17 0000 01 2200 16 32 B IC : BF KK DE 2 K In hab er : Must erman n G mb H .", "bbox": [104, 528, 661, 537]}
+{"text": "Mit fre und lic hen Gri Ben ,", "bbox": [104, 575, 285, 586]}
+{"text": "Max Must erman n", "bbox": [104, 608, 231, 616]}
+{"text": "Must erman n G mb H .", "bbox": [443, 931, 559, 937]}
+{"text": "Hau pt stra Be 123 50 20 Sal z burg O ster re ich", "bbox": [378, 942, 624, 952]}
+{"text": "Tel .: + 43 12 34 123 456 office @ must erman n . com", "bbox": [363, 955, 639, 963]}
+{"text": "St .- N r .: 23 / 123 / 456 / 789 UID : AT U 123 45 678 IB AN : AT 49 17 0000 01 2200 16 32", "bbox": [285, 968, 717, 976]}

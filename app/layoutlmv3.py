@@ -1,125 +1,166 @@
 import os
 import json
+import re
+from typing import List, Dict
+
 import numpy as np
 from PIL import Image
-from transformers import LayoutLMv3Processor, LayoutLMv3ForQuestionAnswering, AutoTokenizer
-import pytesseract
-from config import TMP_DIR, TESSERACT_CMD
+from transformers import LayoutLMv3Processor, LayoutLMv3ForQuestionAnswering
 
-# Configure Tesseract
-pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+from config import TMP_DIR, SAMPLE_PNG_PATH
+
+# 1) Modelle & Processor einmal laden
+_PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base")
+_MODEL = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-base")
 
 
 def layoutlm_image_to_text(image_path: str) -> str:
-    base = os.path.splitext(os.path.basename(image_path))[0]
-    txt_path = os.path.join(TMP_DIR, f"{base}.txt")
+    """
+    Extrahiert Text‐Chunks aus einem Bild mit LayoutLMv3,
+    speichert sie als JSON‐Zeilen in TMP_DIR/<basename>.txt
+    und liefert das komplette JSON‐Array als String zurück.
+    """
+    image = _load_image(image_path)
+    inputs = _PROCESSOR(images=image, return_tensors="pt")
+    # nur Forward‐Pass für Tokenization + bboxes
+    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")})
 
-    # Initialize processor, model, tokenizer
-    processor = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base")
-    model = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-base")
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/layoutlmv3-base")
+    tokens = _flatten_tokens(inputs)
+    sorted_lines = _bucket_tokens_by_line(tokens)
+    thresh = _compute_dynamic_threshold(sorted_lines)
+    chunks = _chunk_all_lines(sorted_lines, thresh)
+    chunk_objs = _make_chunk_objects(chunks)
 
-    # Load image
-    try:
-        image = Image.open(image_path).convert("RGB")
-    except FileNotFoundError:
-        raise RuntimeError(f"File not found: {image_path}")
+    return _save_and_serialize(chunk_objs, image_path)
 
-    # Process image
-    inputs = processor(images=image, return_tensors="pt")
 
-    # Prepare model inputs
-    expected = ['input_ids', 'attention_mask', 'bbox', 'pixel_values']
-    model_inputs = {k: inputs[k] for k in expected if k in inputs}
+def _load_image(path: str) -> Image.Image:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"No such file: {path}")
+    return Image.open(path).convert("RGB")
 
-    # Forward pass
-    _ = model(**model_inputs)
 
-    # 1) Flatten tokens + bboxes, filter special tokens
-    all_tokens = []
-    special_tokens = set(tokenizer.all_special_tokens)
-    for idx, token_id in enumerate(inputs['input_ids'][0]):
-        token_str = tokenizer.convert_ids_to_tokens(int(token_id))
-        # Skip special tokens
-        if token_str in special_tokens:
+def _flatten_tokens(inputs) -> List[Dict]:
+    """
+    Flacht die Token + ihre Bounding‐Boxes ab,
+    filtert Spezial‐Tokens und behält das rohe Token‐String mit Ġ‐Präfix.
+    """
+    toks = []
+    special = set(_PROCESSOR.tokenizer.all_special_tokens)
+    ids = inputs["input_ids"][0]
+    bboxes = inputs["bbox"][0]
+    for idx, tok_id in enumerate(ids):
+        tok_str = _PROCESSOR.tokenizer.convert_ids_to_tokens(int(tok_id))
+        if tok_str in special:
             continue
-        # Normalize: strip leading 'Ġ' (space marker)
-        token_clean = token_str.lstrip('Ġ')
-        if not token_clean:
-            continue
-        bbox = inputs['bbox'][0][idx].tolist()
-        all_tokens.append({'text': token_clean, 'bbox': bbox})
+        toks.append({
+            "text": tok_str,               # hier noch inklusive 'Ġ' wenn vorhanden
+            "bbox": bboxes[idx].tolist()
+        })
+    return toks
 
-    # 2) Group into lines by y-center buckets
+
+def _bucket_tokens_by_line(tokens: List[Dict], bucket_height: int = 10) -> List[List[Dict]]:
+    """
+    Gruppiert Tokens nach y‐Mittelpunkt in Zeilen.
+    """
     lines = {}
-    for t in all_tokens:
-        y_center = (t['bbox'][1] + t['bbox'][3]) / 2
-        bucket = int(y_center // 10)
-        lines.setdefault(bucket, []).append(t)
-    sorted_lines = sorted(lines.items(), key=lambda x: x[0])
+    for t in tokens:
+        y0, y1 = t["bbox"][1], t["bbox"][3]
+        key = int(((y0 + y1) / 2) // bucket_height)
+        lines.setdefault(key, []).append(t)
+    return [
+        sorted(line, key=lambda x: x["bbox"][0])
+        for _, line in sorted(lines.items())
+    ]
 
-    # -------------------------------------------------------------
-    # Dynamisches Chunking (dokumentweite Gap-Schwelle)
-    # -------------------------------------------------------------
-    # 1) Sammle alle horizontalen Abstände
+
+def _compute_dynamic_threshold(sorted_lines: List[List[Dict]]) -> int:
+    """
+    Berechnet das 85. Perzentil aller positiven Lücken
+    zwischen benachbarten Tokens, mindestens 12px,
+    Fallback 40px.
+    """
     all_gaps = []
-    for _, line_tokens in sorted_lines:
-        lt = sorted(line_tokens, key=lambda x: x['bbox'][0])
-        for i in range(len(lt) - 1):
-            gap = lt[i+1]['bbox'][0] - lt[i]['bbox'][2]
+    for line in sorted_lines:
+        for a, b in zip(line, line[1:]):
+            gap = b["bbox"][0] - a["bbox"][2]
             if gap > 0:
                 all_gaps.append(gap)
 
-    # 2) Bestimme Schwellenwert
     if all_gaps:
-        doc_thresh = max(int(np.percentile(all_gaps, 85)), 12)
-    else:
-        doc_thresh = 40
+        return max(int(np.percentile(all_gaps, 85)), 12)
+    return 40
 
-    # 3) Chunk-Funktion
-    def chunk_line(tokens_sorted, thresh):
-        chunks, cur = [], [tokens_sorted[0]]
-        for tok in tokens_sorted[1:]:
-            gap = tok['bbox'][0] - cur[-1]['bbox'][2]
-            if gap > thresh:
-                chunks.append(cur)
-                cur = [tok]
-            else:
-                cur.append(tok)
-        chunks.append(cur)
-        return chunks
 
-    # 4) Wende Chunking an
+def _chunk_line(tokens: List[Dict], thresh: int) -> List[List[Dict]]:
+    """
+    Zerlegt eine einzelne Zeile in Chunks nach thresh.
+    """
     chunks = []
-    for _, line_tokens in sorted_lines:
-        lt = sorted(line_tokens, key=lambda x: x['bbox'][0])
-        if lt:
-            chunks.extend(chunk_line(lt, doc_thresh))
+    current = [tokens[0]]
+    for tok in tokens[1:]:
+        if tok["bbox"][0] - current[-1]["bbox"][2] > thresh:
+            chunks.append(current)
+            current = [tok]
+        else:
+            current.append(tok)
+    chunks.append(current)
+    return chunks
 
-    # 5) Baue chunk_objects und bereinige Text
-    chunk_objects = []
-    for ch in chunks:
-        texts = [t['text'] for t in ch]
-        # Join with single space and strip
-        chunk_text = ' '.join(texts).strip()
-        if not chunk_text:
+
+def _chunk_all_lines(sorted_lines: List[List[Dict]], thresh: int) -> List[List[Dict]]:
+    """
+    Wendet _chunk_line auf alle Zeilen an.
+    """
+    chunks = []
+    for line in sorted_lines:
+        if line:
+            chunks.extend(_chunk_line(line, thresh))
+    return chunks
+
+
+def _make_chunk_objects(chunks: List[List[Dict]]) -> List[Dict]:
+    """
+    Baut aus jedem Chunk das finale Dict mit:
+    - 'text': korrekter Text (Ġ→Leerzeichen, dann normalize)
+    - 'bbox': Sammel‐Bounding‐Box
+    """
+    objs = []
+    for chunk in chunks:
+        # zusammensetzen und Ġ durch Space ersetzen
+        raw = "".join(t["text"] for t in chunk)
+        text = raw.replace("Ġ", " ")
+        # Mehrfache Leerzeichen zusammenfassen
+        text = re.sub(r"\s+", " ", text).strip()
+        if not text:
             continue
-        # Compute aggregate bbox
-        xs = [t['bbox'][0] for t in ch] + [t['bbox'][2] for t in ch]
-        ys = [t['bbox'][1] for t in ch] + [t['bbox'][3] for t in ch]
-        bbox = [min(xs), min(ys), max(xs), max(ys)]
-        chunk_objects.append({'text': chunk_text, 'bbox': bbox})
 
-    # Save to file
-    os.makedirs(os.path.dirname(txt_path), exist_ok=True)
-    with open(txt_path, 'w', encoding='utf-8') as f:
-        for obj in chunk_objects:
-            f.write(json.dumps(obj, ensure_ascii=False) + '\n')
-
-    return json.dumps(chunk_objects, ensure_ascii=False)
+        xs = [coord for t in chunk for coord in (t["bbox"][0], t["bbox"][2])]
+        ys = [coord for t in chunk for coord in (t["bbox"][1], t["bbox"][3])]
+        objs.append({
+            "text": text,
+            "bbox": [min(xs), min(ys), max(xs), max(ys)]
+        })
+    return objs
 
 
-if __name__ == '__main__':
-    import sys
-    path = sys.argv[1]
-    layoutlm_image_to_text(path)
+def _save_and_serialize(chunks: List[Dict], image_path: str) -> str:
+    """
+    Speichert jede Zeile als JSON in TMP_DIR und gibt
+    das Gesamt‐JSON als String zurück.
+    """
+    base = os.path.splitext(os.path.basename(image_path))[0]
+    out_path = os.path.join(TMP_DIR, f"{base}.txt")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        for obj in chunks:
+            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+    return json.dumps(chunks, ensure_ascii=False)
+
+
+# --- Test‐Harness (optional) ---
+if __name__ == "__main__":
+    print(layoutlm_image_to_text(SAMPLE_PNG_PATH))
