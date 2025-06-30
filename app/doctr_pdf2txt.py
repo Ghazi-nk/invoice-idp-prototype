@@ -16,67 +16,69 @@ def run_ocr(pdf_path: str):
     return predictor(document)
 
 
-def reconstruct_text(result, char_width: int = 150) -> str:
-    """
-    Reconstruct text from an OCR result using fixed-width alignment.
-
-    Args:
-        result: OCR result object.
-        char_width: Width of the fixed character buffer per line.
-
-    Returns:
-        A multi-line string of reconstructed text.
-    """
+def reconstruct_text(result) -> str:
     data = result.export()
     lines_out = []
-
-    def _make_line(words):
-        buf = [' '] * char_width
-        for w in sorted(words, key=lambda w: w.get('geometry', w.get('bbox'))[0][0]):
-            geom = w.get('geometry', w.get('bbox'))
-            x0 = geom[0][0] if isinstance(geom[0], (list, tuple)) else geom[0]
-            col = int(x0 * char_width)
-            for i, ch in enumerate(w['value']):
-                if 0 <= col + i < char_width:
-                    buf[col + i] = ch
-        return ''.join(buf).rstrip()
 
     for page in data.get('pages', []):
         for block in page.get('blocks', []):
             lines = block.get('lines', [])
-            counts = [len(l['words']) for l in lines]
-            is_table = len(counts) >= 2 and len({*counts}) == 1
-            if is_table:
-                header = _make_line(lines[0]['words'])
-                sep = ''.join('-' if ch != ' ' else ' ' for ch in header)
-                lines_out.extend([header, sep])
-                for row in lines[1:]:
-                    lines_out.append(_make_line(row['words']))
-                lines_out.append('')
+            counts = [len(line['words']) for line in lines]
+
+            if _is_uniform_row_count(counts):
+                lines_out.extend(_render_table(lines))
             else:
-                for line in lines:
-                    lines_out.append(_make_line(line['words']))
-                lines_out.append('')
+                lines_out.extend(_render_paragraph(lines))
+
+            lines_out.append('')  # paragraph/table spacer
 
     return "\n".join(lines_out)
 
 
-def extract_text_from_pdf(pdf_path: str, char_width: int = 150, reconstructed: bool = True) -> str:
-    """
-    Extract text from a PDF via OCR, optionally reconstructing layout.
+def _is_uniform_row_count(counts: list[int]) -> bool:
+    """Detects if every row has the same number of words (and at least two rows)."""
+    return len(counts) >= 2 and len(set(counts)) == 1
 
-    Args:
-        pdf_path: Path to the input PDF file.
-        char_width: Width of the fixed character buffer per line.
-        reconstructed: If False, return raw OCR text; if True, return reconstructed layout.
 
-    Returns:
-        OCR text as a string.
+def _render_table(lines: list[dict]) -> list[str]:
     """
+    Renders a table block:
+    - first line is header
+    - second line is a dash-separator
+    - remaining lines are normal rows
+    """
+    header = _make_line(lines[0]['words'])
+    separator = ''.join('-' if ch != ' ' else ' ' for ch in header)
+
+    out = [header, separator]
+    for row in lines[1:]:
+        out.append(_make_line(row['words']))
+    return out
+
+
+def _render_paragraph(lines: list[dict]) -> list[str]:
+    """Renders a normal text block (one output line per input line)."""
+    return [_make_line(line['words']) for line in lines]
+
+
+def _make_line(words):
+    char_width = 150
+    buf = [' '] * char_width
+    for w in sorted(words, key=lambda w: w.get('geometry', w.get('bbox'))[0][0]):
+        geom = w.get('geometry', w.get('bbox'))
+        x0 = geom[0][0] if isinstance(geom[0], (list, tuple)) else geom[0]
+        col = int(x0 * char_width)
+        for i, ch in enumerate(w['value']):
+            if 0 <= col + i < char_width:
+                buf[col + i] = ch
+    return ''.join(buf).rstrip()
+
+def extract_text_from_pdf(pdf_path: str, reconstructed: bool = True) -> str:
+
     result = run_ocr(pdf_path)
     if not reconstructed:
         return result.render()
-    return reconstruct_text(result, char_width)
+    return reconstruct_text(result)
 
 
 if __name__ == '__main__':
