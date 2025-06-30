@@ -1,5 +1,10 @@
+import os
+
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
+
+from utils.config import TMP_DIR
+
 
 def run_ocr(pdf_path: str):
     """
@@ -76,10 +81,27 @@ def _make_line(words):
 def doctr_pdf_to_text(pdf_path: str, reconstructed: bool = True) -> str:
 
     result = run_ocr(pdf_path)
-    if not reconstructed:
-        return result.render()
-    return reconstruct_text(result)
+    if reconstructed:
+        results = reconstruct_text(result)
+    else:
+        results = result.render()
 
+    _save_and_serialize(results, pdf_path)
+    return results
+
+
+def _save_and_serialize(text: str, pdf_path: str) -> str:
+    """
+    Save the OCR text to a file and return the path.
+    """
+    base = os.path.splitext(os.path.basename(pdf_path))[0]
+    out_path = os.path.join(TMP_DIR, f"{base}.txt")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(text)
+
+    return out_path
 
 if __name__ == '__main__':
     text = doctr_pdf_to_text("results/input/BRE-02.pdf")
