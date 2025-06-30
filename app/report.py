@@ -68,7 +68,7 @@ def run_tests_for_module(
         expected_file = os.path.join(expected_dir, base + '.json')
 
         print(f"[Info] Processing {pdf}...")
-        actual = func(pdf_path)
+        actual = func(pdf_path, True)
         expected = load_expected(expected_file)
 
         if actual is None or expected is None:
