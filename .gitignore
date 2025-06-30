@@ -20,6 +20,7 @@ app/ocr_ollama/tmp/
 app/ocr_ollama/output/
 app/ocr_ollama/input/
 app/results/tmp/
+app/results/reports/
 
 
 # Ignore Tesseract/OCR artifacts
