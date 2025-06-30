@@ -46,7 +46,6 @@ def process_single_pdf_doctr(pdf_path: str) -> str | None:
         return None
 
 
-# create a function that gets a folder path where multiple PDFs are stored and the type of the pipeline to use ("ocr", "layoutlm", "doctr") and processes all PDFs in that folder using the specified pipeline and returns a list of results
 def process_multiple_pdfs(folder_path: str, pipeline_type: str, process_searchable: bool = False) -> list[dict | None]:
     results = []
     for fname in os.listdir(folder_path):
@@ -76,9 +75,10 @@ def process_multiple_pdfs(folder_path: str, pipeline_type: str, process_searchab
     return results
 
 
+
 if __name__ == "__main__":
     # ── STATIC EXAMPLE ARGS ───────────────────────────────────────────────────
-    pipeline_type     = "doctr"                  # one of: "ocr", "layoutlm", "doctr"
+    pipeline_type     = "doctr"                      # one of: "ocr", "layoutlm", "doctr"
     process_searchable = False                       # True = use embedded text when available
     # ────────────────────────────────────────────────────────────────────────
 
