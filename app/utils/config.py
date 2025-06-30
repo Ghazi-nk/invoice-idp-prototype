@@ -18,6 +18,12 @@ TMP_DIR    = os.getenv("TMP_DIR")
 
 TESSERACT_CMD = os.getenv("TESSERACT_CMD")
 
+INVOICES_DIR = os.getenv("INVOICES_DIR")
+GROUND_TRUTH_DIR = os.getenv("GROUND_TRUTH_DIR")
+REPORTS_DIR = os.getenv("REPORTS_DIR")
+SAMPLE_FOLDER = os.getenv("SAMPLE_FOLDER")
+
+
 config_vars = {
     "SAMPLE_PDF_PATH": SAMPLE_PDF_PATH,
     "SAMPLE_PNG_PATH": SAMPLE_PNG_PATH,
