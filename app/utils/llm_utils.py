@@ -1,7 +1,7 @@
 import json
 import requests
 from pathlib import Path
-from config import GENERATE_ENDPOINT, OLLAMA_MODEL
+from utils.config import GENERATE_ENDPOINT, OLLAMA_MODEL
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 PROMPT_FILE = BASE_DIR / "resources" / "Prompts" / "prompt.txt"

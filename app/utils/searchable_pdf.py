@@ -2,7 +2,7 @@ import os
 import json
 import fitz  # PyMuPDF
 
-from config import TMP_DIR
+from utils.config import TMP_DIR
 
 def extract_text_if_searchable(pdf_path: str) -> str:
     """

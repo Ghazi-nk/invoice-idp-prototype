@@ -1,9 +1,9 @@
 import os
-from pdf_utils import pdf_to_png
-from ocr_utils import ocr_png_to_text
-from llm_utils import ask_ollama_for_invoice_fields
-from searchable_pdf import extract_text_if_searchable
-from layoutlmv3 import layoutlm_image_to_text
+from utils.pdf_utils import pdf_to_png
+from tesseract_ocr import ocr_png_to_text
+from utils.llm_utils import ask_ollama_for_invoice_fields
+from utils.searchable_pdf import extract_text_if_searchable
+from layoutlmv3_png2txt import layoutlm_image_to_text
 from doctr_pdf2txt import doctr_pdf_to_text
 
 

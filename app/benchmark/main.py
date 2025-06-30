@@ -1,6 +1,6 @@
 import os
 import json
-from config import INPUT_DIR, OUTPUT_DIR, TMP_DIR
+from utils.config import INPUT_DIR, OUTPUT_DIR, TMP_DIR
 from pipelines import process_single_pdf_ocr
 
 def main():

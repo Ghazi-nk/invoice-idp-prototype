@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from transformers import LayoutLMv3Processor, LayoutLMv3ForQuestionAnswering
 
-from config import TMP_DIR, SAMPLE_PNG_PATH
+from utils.config import TMP_DIR, SAMPLE_PNG_PATH
 
 # 1) Modelle & Processor einmal laden
 _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-base")

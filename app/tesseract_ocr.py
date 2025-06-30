@@ -2,7 +2,7 @@ import subprocess
 import os
 import json
 
-from config import TMP_DIR, TESSERACT_CMD
+from utils.config import TMP_DIR, TESSERACT_CMD
 
 def ocr_png_to_text(png_path: str) -> str:
     base = os.path.splitext(os.path.basename(png_path))[0]
