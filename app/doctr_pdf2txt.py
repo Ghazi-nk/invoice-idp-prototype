@@ -73,7 +73,7 @@ def _make_line(words):
                 buf[col + i] = ch
     return ''.join(buf).rstrip()
 
-def extract_text_from_pdf(pdf_path: str, reconstructed: bool = True) -> str:
+def doctr_pdf_to_text(pdf_path: str, reconstructed: bool = True) -> str:
 
     result = run_ocr(pdf_path)
     if not reconstructed:
@@ -82,5 +82,5 @@ def extract_text_from_pdf(pdf_path: str, reconstructed: bool = True) -> str:
 
 
 if __name__ == '__main__':
-    text = extract_text_from_pdf("results/input/BRE-02.pdf")
+    text = doctr_pdf_to_text("results/input/BRE-02.pdf")
     print(text)

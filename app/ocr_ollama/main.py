@@ -1,7 +1,7 @@
 import os
 import json
 from config import INPUT_DIR, OUTPUT_DIR, TMP_DIR
-from pipeline import process_single_pdf
+from pipelines import process_single_pdf_ocr
 
 def main():
     # Verzeichnisse sicherstellen
@@ -21,7 +21,7 @@ def main():
             print(f"{out} existiert. Überspringe...")
             continue
 
-        result = process_single_pdf(pdf, False)
+        result = process_single_pdf_ocr(pdf, False)
         if result:
             with open(out, "w", encoding="utf-8") as f:
                 json.dump(result, f, ensure_ascii=False, indent=4)
