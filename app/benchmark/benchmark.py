@@ -64,8 +64,8 @@ def canon_id(s: str | None) -> str:
 # Vergleichs‑Logik
 # ──────────────────────────────────────────────────────────────────────────────
 
-ID_KEYS     = {"ust-id", "tax_id", "iban"}
-MONEY_KEYS  = {"gross_amount", "total_amount"}
+ID_KEYS     = {"ust-id", "iban"}
+MONEY_KEYS  = {"total_amount"}
 
 
 def is_match(field: str, true_val, pred_val) -> bool:

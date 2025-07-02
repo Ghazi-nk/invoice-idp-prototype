@@ -29,13 +29,13 @@ Deine **einzige** Aufgabe: Aus dem nachfolgenden OCR-Rohtext einer Rechnung **ex
 - `total_amount`: Gesamtsumme inkl. MwSt als Zahl (z. B. 430.78)
 - `currency`: ISO-Währungscode (z. B. EUR)  
 - `purchase_order_number`: Bestell-/Auftragsnummer oder `null`  
-- `ust_id`: Steuernummer oder USt-IdNr. des Verkäufers
+- `ust-id`: Steuernummer oder USt-IdNr. des Verkäufers
 - `iban`: IBAN des Verkäufers oder `null`  
 - `tax_rate`: angewendeter Umsatzsteuersatz als Zahl (z. B. 19.0)
 
 **Erwarte EXAKT!!!! dieses JSON-Gerüst (ohne Zeilenumbrüche!!!!):
 
-{{"invoice_date":"<DD.MM.YYYY>","vendor_name":"<string>","invoice_number":"<string>","recipient_name":"<string>","total_amount":<number>,"currency":"<string>","purchase_order_number":null,"tax_id":"<string>","iban":null,"tax_rate":<number>}}
+{{"invoice_date":"<DD.MM.YYYY>","vendor_name":"<string>","invoice_number":"<string>","recipient_name":"<string>","total_amount":<number>,"currency":"<string>","purchase_order_number":null,"ust-id":"<string>","iban":null,"tax_rate":<number>}}
 
 ### Beispiel (zur Orientierung)
 Rechnungstext (gekürzt):
@@ -52,7 +52,7 @@ Steuernummer 99/123/45678
 ---
 
 Erwartete Ausgabe (eine Zeile, keine Leerzeichen außerhalb der Schlüssel):
-{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":"Demo AG","total_amount":1250.90,"currency":"EUR","purchase_order_number":null,"ust_id":"99/123/45678","iban":"DE12345678901234567800","tax_rate":19.0}
+{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":"Demo AG","total_amount":1250.90,"currency":"EUR","purchase_order_number":null,"ust-id":"99/123/45678","iban":"DE12345678901234567800","tax_rate":19.0}
 
 ## Nutzer
 
