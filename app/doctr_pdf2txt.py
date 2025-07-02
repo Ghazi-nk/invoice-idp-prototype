@@ -22,51 +22,49 @@ def run_ocr(pdf_path: str):
 
 
 # -------------------------
-# Post‑processing helpers
+# Post-processing helpers
 # -------------------------
 
-def extract_word_boxes(result) -> List[Dict[str, Any]]:
-    """Flatten a Doctr ``result`` into a list of word‑level dictionaries.
+def extract_line_boxes(result) -> List[Dict[str, Any]]:
+    """Flatten a Doctr ``result`` into a list of line-level dictionaries.
 
-    Each item has the form ``{"text": str, "bbox": [x0, y0, x1, y1], "page": int}``.
-    The bounding boxes are **absolute pixel coordinates** derived from the page dimensions,
-    mirroring the format you asked for.
+    Each item has the form {"text": str, "bbox": [x0, y0, x1, y1], "page": int}.
+    The bounding boxes are **absolute pixel coordinates** derived from the page dimensions.
     """
     data = result.export()
-    words: List[Dict[str, Any]] = []
+    lines: List[Dict[str, Any]] = []
 
     for page_index, page in enumerate(data.get("pages", []), start=1):
-        # Doctr stores dimensions as (height, width)
-        height, width = page.get("dimensions", (1, 1))
+        # Doctr stores dimensions as (width, height)
+        width, height = page.get("dimensions", (1, 1))
 
         for block in page.get("blocks", []):
             for line in block.get("lines", []):
-                for word in line.get("words", []):
-                    # Geometry is [[x0, y0], [x1, y1]] in *relative* coords (0‒1)
-                    (x0, y0), (x1, y1) = word.get("geometry", ((0, 0), (0, 0)))
-                    abs_bbox = [
-                        int(x0 * width),
-                        int(y0 * height),
-                        int(x1 * width),
-                        int(y1 * height),
-                    ]
-                    words.append({
-                        "text": word.get("value", ""),
-                        "bbox": abs_bbox,
-                        "page": page_index,
-                    })
-    return words
+                (x0n, y0n), (x1n, y1n) = line.get("geometry", ((0, 0), (0, 0)))
+                abs_bbox = [
+                    int(x0n * width),
+                    int(y0n * height),
+                    int(x1n * width),
+                    int(y1n * height),
+                ]
+                text = " ".join(w.get("value", "") for w in line.get("words", []))
+                lines.append({
+                    "text": text,
+                    "bbox": abs_bbox,
+                    "page": page_index,
+                })
+    return lines
 
 
-def save_json(obj: Any, pdf_path: str) -> str:
-    """Persist *obj* as JSON next to *pdf_path* and return the file path."""
-    base_name = Path(pdf_path).stem
-    out_path = Path(TMP_DIR) / f"{base_name}.json"
+def save_lines_as_txt(lines: List[Dict[str, Any]], pdf_path: str) -> str:
+    """Save each line dict as a JSON line in a .txt file and return its path."""
+    base = Path(pdf_path).stem
+    out_path = Path(TMP_DIR) / f"{base}.txt"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(out_path, "w", encoding="utf‑8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=2)
-
+    with open(out_path, "w", encoding="utf-8") as f:
+        for line in lines:
+            f.write(json.dumps(line, ensure_ascii=False) + "\n")
     return str(out_path)
 
 
@@ -74,16 +72,18 @@ def save_json(obj: Any, pdf_path: str) -> str:
 # Public convenience wrapper
 # -------------------------
 
-def doctr_pdf_to_text(pdf_path: str, *, save: bool = True) -> List[Dict[str, Any]]:
-    """Run OCR and return a word‑box list (and optionally save to disk)."""
+def doctr_pdf_to_text(pdf_path: str) -> str:
+    """
+    Run OCR on a PDF, extract line-level text boxes,
+    save each as JSON-lines in TMP_DIR/<basename>.txt,
+    and return the full JSON array as a string.
+    """
     result = run_ocr(pdf_path)
-    word_boxes = extract_word_boxes(result)
-
-    if save:
-        path = save_json(word_boxes, pdf_path)
-        print(f"Saved OCR word boxes ➜ {path}")
-
-    return word_boxes
+    lines = extract_line_boxes(result)
+    # save as JSON-lines
+    save_lines_as_txt(lines, pdf_path)
+    # return JSON array string
+    return json.dumps(lines, ensure_ascii=False)
 
 
 # -------------------------
@@ -91,5 +91,5 @@ def doctr_pdf_to_text(pdf_path: str, *, save: bool = True) -> List[Dict[str, Any
 # -------------------------
 
 if __name__ == "__main__":
-        boxes = doctr_pdf_to_text("results/input/BRE-02.pdf", save=True)
-        print(json.dumps(boxes, ensure_ascii=False))
+    output_str = doctr_pdf_to_text("results/input/BRE-02.pdf")
+    print(output_str)

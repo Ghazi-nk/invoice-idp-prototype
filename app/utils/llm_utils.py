@@ -28,7 +28,7 @@ def ask_ollama_for_invoice_fields(ocr_text: str) -> dict:
         raise RuntimeError(f"Ollama API: {resp.status_code} – {resp.text}")
 
     raw = resp.json().get("response", "")
-
+    print(f"Ollama response: {raw}")
     json_chunk = _extract_first_complete_json(raw)
     if not json_chunk:
         raise ValueError("Could not find a complete JSON object in Ollama response:\n" + raw[:500])
