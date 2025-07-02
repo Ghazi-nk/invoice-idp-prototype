@@ -9,7 +9,7 @@ from pathlib import Path
 
 from utils.config import INVOICES_DIR, GROUND_TRUTH_DIR as GT_DIR, OLLAMA_MODEL
 from utils.pdf_utils import pdf_to_png
-from tesseract_ocr import tesseract_png_to_text
+from ocr import tesseract_png_to_text, easyocr_png_to_text
 from layoutlmv3_png2txt import layoutlm_image_to_text
 from doctr_pdf2txt import doctr_pdf_to_text
 from utils.searchable_pdf import extract_text_if_searchable
@@ -22,7 +22,7 @@ MODEL_SAFE         = OLLAMA_MODEL.replace(":", "_")
 OUTPUT_SUMMARY_CSV = f"benchmark_summary_{MODEL_SAFE}.csv"
 OUTPUT_DETAIL_CSV  = f"benchmark_details_{MODEL_SAFE}.csv"
 USE_SEARCHABLE     = False                     # eingebetteten Text bevorzugen
-PIPELINES          = ["ocr", "layoutlm", "doctr"]
+PIPELINES          = ["easyocr", "tesseract", "layoutlm", "doctr"]
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Helper: Canonicalisation & Normalisation
@@ -118,7 +118,10 @@ def extract_text(pdf_path: str, pipeline: str, use_searchable: bool = False) -> 
 
     if pipeline == "doctr":
         txt = doctr_pdf_to_text(pdf_path)
-    elif pipeline == "ocr":
+    elif pipeline == "easyocr":
+        png = pdf_to_png(pdf_path)
+        txt = easyocr_png_to_text(png)
+    elif pipeline == "tesseract":
         png = pdf_to_png(pdf_path)
         txt = tesseract_png_to_text(png)
     elif pipeline == "layoutlm":

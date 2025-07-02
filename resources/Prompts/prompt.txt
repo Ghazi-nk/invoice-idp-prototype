@@ -8,13 +8,13 @@ Deine **einzige** Aufgabe: Aus dem nachfolgenden OCR-Rohtext einer Rechnung **ex
 2. Zahlen ohne Anführungszeichen, Dezimaltrennzeichen **Punkt**.  
 3. Gib **keine anderen Schlüssel** als die zehn definierten zurück und halte exakt deren Reihenfolge ein.  
 4. Enthält der OCR-Text mehrere Kandidaten für ein Feld, wähle den plausibelsten:  
-   • `gross_amount` → Betrag in der Zeile mit *“total amount”* / *„Gesamtbetrag“*; sonst höchste Euro-Summe.  
+   • `total_amount` → Betrag in der Zeile mit *“total amount”* / *„Gesamtbetrag“*; sonst höchste Euro-Summe.
    • `invoice_date` → Datum im Kopfbereich.  
-   • `iban` → erste gültige 22-stellige Zeichen­kette **nach** dem Wort „IBAN“.  
-5. Datums­formate:  
+   • `iban` → erste gültige 22-stellige Zeichenkette **nach** dem Wort „IBAN“.
+5. Datumsformate:
    • Akzeptiere **DD.MM.YYYY** oder **YYYY.MM.DD** – letztere musst du in **DD.MM.YYYY** umwandeln.  
 6. Entferne abschließende Satzzeichen («.», «:») aus `vendor_name` und `recipient_name`.  
-7. Währungs­logik:  
+7. Währungslogik:
    • Enthält der Text das Symbol «€» → `currency` = `"EUR"`.  
    • Andernfalls nimm den im Dokument angegebenen ISO-Code.  
 8. `tax_rate` → Zahl vor „%“ in der Nähe von *USt / MwSt / VAT*.  
@@ -26,16 +26,16 @@ Deine **einzige** Aufgabe: Aus dem nachfolgenden OCR-Rohtext einer Rechnung **ex
 - `vendor_name`: Aussteller (Verkäufer)  
 - `invoice_number`: Rechnungs- oder Belegnummer  
 - `recipient_name`: Rechnungsempfänger (Käufer)  
-- `gross_amount`: Gesamtsumme inkl. MwSt als Zahl (z. B. 430.78)  
+- `total_amount`: Gesamtsumme inkl. MwSt als Zahl (z. B. 430.78)
 - `currency`: ISO-Währungscode (z. B. EUR)  
 - `purchase_order_number`: Bestell-/Auftragsnummer oder `null`  
-- `tax_id`: Steuernummer oder USt-IdNr. des Verkäufers  
+- `ust_id`: Steuernummer oder USt-IdNr. des Verkäufers
 - `iban`: IBAN des Verkäufers oder `null`  
 - `tax_rate`: angewendeter Umsatzsteuersatz als Zahl (z. B. 19.0)
 
-**Erwarte EXAKT!!!! dieses JSON-Gerüst (ohne Zeilenumbrüche):
+**Erwarte EXAKT!!!! dieses JSON-Gerüst (ohne Zeilenumbrüche!!!!):
 
-{"invoice_date":"<DD.MM.YYYY>","vendor_name":"<string>","invoice_number":"<string>","recipient_name":"<string>","gross_amount":<number>,"currency":"<string>","purchase_order_number":null,"tax_id":"<string>","iban":null,"tax_rate":<number>}
+{{"invoice_date":"<DD.MM.YYYY>","vendor_name":"<string>","invoice_number":"<string>","recipient_name":"<string>","total_amount":<number>,"currency":"<string>","purchase_order_number":null,"tax_id":"<string>","iban":null,"tax_rate":<number>}}
 
 ### Beispiel (zur Orientierung)
 Rechnungstext (gekürzt):
@@ -52,7 +52,7 @@ Steuernummer 99/123/45678
 ---
 
 Erwartete Ausgabe (eine Zeile, keine Leerzeichen außerhalb der Schlüssel):
-{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":"Demo AG","gross_amount":1250.90,"currency":"EUR","purchase_order_number":null,"tax_id":"99/123/45678","iban":"DE12345678901234567800","tax_rate":19.0}
+{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":"Demo AG","total_amount":1250.90,"currency":"EUR","purchase_order_number":null,"ust_id":"99/123/45678","iban":"DE12345678901234567800","tax_rate":19.0}
 
 ## Nutzer
 
