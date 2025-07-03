@@ -1,0 +1,201 @@
+invoice,pipeline,field,expected,predicted,match
+BRE-01,easyocr,invoice_date,06.11.2012,06.11.2012,1
+BRE-01,easyocr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-01,easyocr,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-01,easyocr,recipient_name,Best Pinsel KG,Best Pinsel KG,1
+BRE-01,easyocr,total_amount,773.1,773.1,1
+BRE-01,easyocr,currency,EUR,EUR,1
+BRE-01,easyocr,purchase_order_number,,,1
+BRE-01,easyocr,ust-id,DE12345678,DE12345678,1
+BRE-01,easyocr,iban,1234567890,1234567890,1
+BRE-01,easyocr,tax_rate,19.0,19.0,1
+BRE-02,easyocr,invoice_date,13.10.2020,13.10.2020,1
+BRE-02,easyocr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-02,easyocr,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-02,easyocr,recipient_name,ABC GmbH,ABC GmbH,1
+BRE-02,easyocr,total_amount,74.99,74.99,1
+BRE-02,easyocr,currency,EUR,EUR,1
+BRE-02,easyocr,purchase_order_number,,,1
+BRE-02,easyocr,ust-id,ATU12345678,ATU12345678,1
+BRE-02,easyocr,iban,AT491700000122001632,AT491700000122001632,1
+BRE-02,easyocr,tax_rate,19.0,19.0,1
+BRE-03,easyocr,invoice_date,12.03.2015,12.03.2015,1
+BRE-03,easyocr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-03,easyocr,invoice_number,Re-2/2015,Re-2/2015,1
+BRE-03,easyocr,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1
+BRE-03,easyocr,total_amount,367.5,367.5,1
+BRE-03,easyocr,currency,EUR,EUR,1
+BRE-03,easyocr,purchase_order_number,,,1
+BRE-03,easyocr,ust-id,ATU12345678,ATU12345678,1
+BRE-03,easyocr,iban,AT491700000122001632,AT491700000122001632,1
+BRE-03,easyocr,tax_rate,19.0,19.0,1
+BRE-04,easyocr,invoice_date,06.11.2012,06.11.2012,1
+BRE-04,easyocr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-04,easyocr,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-04,easyocr,recipient_name,Best Pinsel KG,Best Pinsel KG,1
+BRE-04,easyocr,total_amount,1031.1,1031.1,1
+BRE-04,easyocr,currency,CHF,CHF,1
+BRE-04,easyocr,purchase_order_number,,,1
+BRE-04,easyocr,ust-id,DE12345678,DE12345678,1
+BRE-04,easyocr,iban,,,1
+BRE-04,easyocr,tax_rate,8.0,8.0,1
+BRE-05,easyocr,invoice_date,13.10.2020,13.10.2020,1
+BRE-05,easyocr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-05,easyocr,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-05,easyocr,recipient_name,ABC GmbH,Herr Wolfram Svenske,0
+BRE-05,easyocr,total_amount,74.99,74.99,1
+BRE-05,easyocr,currency,EUR,EUR,1
+BRE-05,easyocr,purchase_order_number,,,1
+BRE-05,easyocr,ust-id,ATU12345678,ATU12345678,1
+BRE-05,easyocr,iban,AT491700000122001632,AT491700000122001632,1
+BRE-05,easyocr,tax_rate,20.0,19.0,0
+BRE-01,tesseract,invoice_date,06.11.2012,06.11.2012,1
+BRE-01,tesseract,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-01,tesseract,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-01,tesseract,recipient_name,Best Pinsel KG,Frau Mag Veronika Huber,0
+BRE-01,tesseract,total_amount,773.1,773.1,1
+BRE-01,tesseract,currency,EUR,EUR,1
+BRE-01,tesseract,purchase_order_number,,,1
+BRE-01,tesseract,ust-id,DE12345678,DE12345678,1
+BRE-01,tesseract,iban,1234567890,1234567890,1
+BRE-01,tesseract,tax_rate,19.0,19.0,1
+BRE-02,tesseract,invoice_date,13.10.2020,13.10.2020,1
+BRE-02,tesseract,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-02,tesseract,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-02,tesseract,recipient_name,ABC GmbH,ABC GmbH,1
+BRE-02,tesseract,total_amount,74.99,137.48,0
+BRE-02,tesseract,currency,EUR,EUR,1
+BRE-02,tesseract,purchase_order_number,,,1
+BRE-02,tesseract,ust-id,ATU12345678,23/123/456/789,0
+BRE-02,tesseract,iban,AT491700000122001632,AT491700000122001632,1
+BRE-02,tesseract,tax_rate,19.0,19.0,1
+BRE-03,tesseract,invoice_date,12.03.2015,12.03.2015,1
+BRE-03,tesseract,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-03,tesseract,invoice_number,Re-2/2015,Re-2/2015,1
+BRE-03,tesseract,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1
+BRE-03,tesseract,total_amount,367.5,367.5,1
+BRE-03,tesseract,currency,EUR,EUR,1
+BRE-03,tesseract,purchase_order_number,,,1
+BRE-03,tesseract,ust-id,ATU12345678,ATU12345678,1
+BRE-03,tesseract,iban,AT491700000122001632,AT491700000122001632,1
+BRE-03,tesseract,tax_rate,19.0,19.0,1
+BRE-04,tesseract,invoice_date,06.11.2012,06.11.2012,1
+BRE-04,tesseract,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-04,tesseract,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-04,tesseract,recipient_name,Best Pinsel KG,Best Pinsel KG,1
+BRE-04,tesseract,total_amount,1031.1,1031.1,1
+BRE-04,tesseract,currency,CHF,CHF,1
+BRE-04,tesseract,purchase_order_number,,,1
+BRE-04,tesseract,ust-id,DE12345678,DE12345678,1
+BRE-04,tesseract,iban,,,1
+BRE-04,tesseract,tax_rate,8.0,8.0,1
+BRE-05,tesseract,invoice_date,13.10.2020,13.10.2020,1
+BRE-05,tesseract,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-05,tesseract,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-05,tesseract,recipient_name,ABC GmbH,Herr Wolfram Svenske,0
+BRE-05,tesseract,total_amount,74.99,74.99,1
+BRE-05,tesseract,currency,EUR,EUR,1
+BRE-05,tesseract,purchase_order_number,,,1
+BRE-05,tesseract,ust-id,ATU12345678,ATU12345678,1
+BRE-05,tesseract,iban,AT491700000122001632,AT491700000122001632,1
+BRE-05,tesseract,tax_rate,20.0,20.0,1
+BRE-01,layoutlm,invoice_date,06.11.2012,06.11.2012,1
+BRE-01,layoutlm,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-01,layoutlm,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-01,layoutlm,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0
+BRE-01,layoutlm,total_amount,773.1,773.1,1
+BRE-01,layoutlm,currency,EUR,EUR,1
+BRE-01,layoutlm,purchase_order_number,,,1
+BRE-01,layoutlm,ust-id,DE12345678,DE12345678,1
+BRE-01,layoutlm,iban,1234567890,12345678901234567890,0
+BRE-01,layoutlm,tax_rate,19.0,19.0,1
+BRE-02,layoutlm,invoice_date,13.10.2020,13.10.2020,1
+BRE-02,layoutlm,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-02,layoutlm,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-02,layoutlm,recipient_name,ABC GmbH,Herr Wolfram Svenske,0
+BRE-02,layoutlm,total_amount,74.99,74.99,1
+BRE-02,layoutlm,currency,EUR,EUR,1
+BRE-02,layoutlm,purchase_order_number,,,1
+BRE-02,layoutlm,ust-id,ATU12345678,23/123/456/789,0
+BRE-02,layoutlm,iban,AT491700000122001632,AT491700000122001632,1
+BRE-02,layoutlm,tax_rate,19.0,19.0,1
+BRE-03,layoutlm,invoice_date,12.03.2015,12.03.2015,1
+BRE-03,layoutlm,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-03,layoutlm,invoice_number,Re-2/2015,Re-2/2015,1
+BRE-03,layoutlm,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1
+BRE-03,layoutlm,total_amount,367.5,367.5,1
+BRE-03,layoutlm,currency,EUR,EUR,1
+BRE-03,layoutlm,purchase_order_number,,,1
+BRE-03,layoutlm,ust-id,ATU12345678,23/123/456/789,0
+BRE-03,layoutlm,iban,AT491700000122001632,AT491700000122001632,1
+BRE-03,layoutlm,tax_rate,19.0,19.0,1
+BRE-04,layoutlm,invoice_date,06.11.2012,06.11.2012,1
+BRE-04,layoutlm,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-04,layoutlm,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-04,layoutlm,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0
+BRE-04,layoutlm,total_amount,1031.1,1031.1,1
+BRE-04,layoutlm,currency,CHF,CHF,1
+BRE-04,layoutlm,purchase_order_number,,,1
+BRE-04,layoutlm,ust-id,DE12345678,DE12345678,1
+BRE-04,layoutlm,iban,,,1
+BRE-04,layoutlm,tax_rate,8.0,8.0,1
+BRE-05,layoutlm,invoice_date,13.10.2020,13.10.2020,1
+BRE-05,layoutlm,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-05,layoutlm,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-05,layoutlm,recipient_name,ABC GmbH,Herr Wolfram Svenske,0
+BRE-05,layoutlm,total_amount,74.99,74.99,1
+BRE-05,layoutlm,currency,EUR,EUR,1
+BRE-05,layoutlm,purchase_order_number,,,1
+BRE-05,layoutlm,ust-id,ATU12345678,23/123/456/789,0
+BRE-05,layoutlm,iban,AT491700000122001632,AT491700000122001632,1
+BRE-05,layoutlm,tax_rate,20.0,20.0,1
+BRE-01,doctr,invoice_date,06.11.2012,06.11.2012,1
+BRE-01,doctr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-01,doctr,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-01,doctr,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0
+BRE-01,doctr,total_amount,773.1,773.1,1
+BRE-01,doctr,currency,EUR,EUR,1
+BRE-01,doctr,purchase_order_number,,,1
+BRE-01,doctr,ust-id,DE12345678,DE12345678,1
+BRE-01,doctr,iban,1234567890,1234567890,1
+BRE-01,doctr,tax_rate,19.0,19.0,1
+BRE-02,doctr,invoice_date,13.10.2020,13.10.2020,1
+BRE-02,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-02,doctr,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-02,doctr,recipient_name,ABC GmbH,ABC GmbH,1
+BRE-02,doctr,total_amount,74.99,74.99,1
+BRE-02,doctr,currency,EUR,EUR,1
+BRE-02,doctr,purchase_order_number,,,1
+BRE-02,doctr,ust-id,ATU12345678,23/123/456/789,0
+BRE-02,doctr,iban,AT491700000122001632,AT491700000122001632,1
+BRE-02,doctr,tax_rate,19.0,19.0,1
+BRE-03,doctr,invoice_date,12.03.2015,12.03.2015,1
+BRE-03,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-03,doctr,invoice_number,Re-2/2015,Re-2/2015,1
+BRE-03,doctr,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1
+BRE-03,doctr,total_amount,367.5,367.5,1
+BRE-03,doctr,currency,EUR,EUR,1
+BRE-03,doctr,purchase_order_number,,,1
+BRE-03,doctr,ust-id,ATU12345678,23/123/456/789,0
+BRE-03,doctr,iban,AT491700000122001632,AT491700000122001632,1
+BRE-03,doctr,tax_rate,19.0,19.0,1
+BRE-04,doctr,invoice_date,06.11.2012,06.11.2012,1
+BRE-04,doctr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH,1
+BRE-04,doctr,invoice_number,Re-21/2012,Re-21/2012,1
+BRE-04,doctr,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0
+BRE-04,doctr,total_amount,1031.1,1031.1,1
+BRE-04,doctr,currency,CHF,CHF,1
+BRE-04,doctr,purchase_order_number,,,1
+BRE-04,doctr,ust-id,DE12345678,DE12345678,1
+BRE-04,doctr,iban,,,1
+BRE-04,doctr,tax_rate,8.0,8.0,1
+BRE-05,doctr,invoice_date,13.10.2020,13.10.2020,1
+BRE-05,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH,1
+BRE-05,doctr,invoice_number,Re-9/2020,Re-9/2020,1
+BRE-05,doctr,recipient_name,ABC GmbH,Herr Wolfram Svenske,0
+BRE-05,doctr,total_amount,74.99,74.99,1
+BRE-05,doctr,currency,EUR,EUR,1
+BRE-05,doctr,purchase_order_number,,,1
+BRE-05,doctr,ust-id,ATU12345678,23/123/456/789,0
+BRE-05,doctr,iban,AT491700000122001632,AT49170000122001632,0
+BRE-05,doctr,tax_rate,20.0,20.0,1

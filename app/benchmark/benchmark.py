@@ -1,6 +1,5 @@
 import os
 import json
-import glob
 import csv
 import re
 import string
@@ -134,6 +133,18 @@ def extract_text(pdf_path: str, pipeline: str, use_searchable: bool = False) -> 
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Metrik‑Berechnung
+# ──────────────────────────────────────────────────────────────────────────────
+
+def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
+    """Gibt (precision, recall, f1) als gerundete Werte zurück."""
+    precision = tp / (tp + fp) if tp + fp > 0 else 0.0
+    recall    = tp / (tp + fn) if tp + fn > 0 else 0.0
+    f1        = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
+    return round(precision, 3), round(recall, 3), round(f1, 3)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Main Benchmark Loop
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -148,10 +159,12 @@ def main():
         fields = list(json.load(fh).keys())
 
     # Summary + Detail CSV vorbereiten
+    header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", "recall", "f1"]
+
     with open(OUTPUT_SUMMARY_CSV, "w", newline="", encoding="utf-8") as sum_f, \
          open(OUTPUT_DETAIL_CSV,  "w", newline="", encoding="utf-8") as det_f:
 
-        summary_writer = csv.DictWriter(sum_f, fieldnames=["invoice", "pipeline", *fields, "accuracy"])
+        summary_writer = csv.DictWriter(sum_f, fieldnames=header_summary)
         detail_writer  = csv.DictWriter(det_f, fieldnames=["invoice", "pipeline", "field", "expected", "predicted", "match"])
         summary_writer.writeheader()
         detail_writer.writeheader()
@@ -169,10 +182,23 @@ def main():
                 # Summary‑Row aufbauen
                 row_sum = {"invoice": base, "pipeline": pipeline}
                 correct = 0
+                tp = fp = fn = 0  # Zähler für Metriken
+
                 for fld in fields:
-                    ok = is_match(fld, gt.get(fld), pred.get(fld))
-                    row_sum[fld] = int(ok)
-                    correct += ok
+                    match = is_match(fld, gt.get(fld), pred.get(fld))
+                    row_sum[fld] = int(match)
+                    if match:
+                        correct += 1
+                        # zähle TP nur, wenn tatsächlich ein Wert vorhanden war
+                        if gt.get(fld) not in (None, "", "null"):
+                            tp += 1
+                    else:
+                        gt_has   = gt.get(fld)   not in (None, "", "null")
+                        pred_has = pred.get(fld) not in (None, "", "null")
+                        if gt_has:
+                            fn += 1
+                        if pred_has:
+                            fp += 1
 
                     # Detail‑CSV
                     detail_writer.writerow({
@@ -181,10 +207,16 @@ def main():
                         "field":     fld,
                         "expected":  gt.get(fld),
                         "predicted": pred.get(fld),
-                        "match":     int(ok)
+                        "match":     int(match)
                     })
 
+                # Accuracy + weitere Kennzahlen
                 row_sum["accuracy"] = round(correct / len(fields), 3)
+                prec, rec, f1 = calc_metrics(tp, fp, fn)
+                row_sum["precision"] = prec
+                row_sum["recall"]    = rec
+                row_sum["f1"]        = f1
+
                 summary_writer.writerow(row_sum)
 
     print(f"\n✓ Done – wrote {OUTPUT_SUMMARY_CSV} & {OUTPUT_DETAIL_CSV}")
