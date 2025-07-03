@@ -34,13 +34,13 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
 
 if __name__ == "__main__":
     # Example usage
-    png_file = "results/tmp/BRE-01_page1.png"  # Replace with your image file path
+    png_file = "results/tmp/BRE-03_page1.png"  # Replace with your image file path
     try:
-#        text = tesseract_png_to_text(png_file)
- #       print("Tesseract OCR Output:", text)
+        text = tesseract_png_to_text(png_file)
+        print("Tesseract OCR Output:", text)
 
-        easyocr_text = easyocr_png_to_text(png_file)
-        print("EasyOCR Output:", easyocr_text)
+        #easyocr_text = easyocr_png_to_text(png_file)
+        #print("EasyOCR Output:", easyocr_text)
 
     except RuntimeError as e:
         print(f"Error: {e}")
