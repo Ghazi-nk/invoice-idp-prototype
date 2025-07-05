@@ -1,6 +1,6 @@
 pdf2image~=1.17.0
 Pillow~=11.2.1
-torch
+torch~=2.7.1
 transformers>=4.30
 sentencepiece
 protobuf
@@ -9,3 +9,9 @@ python-dotenv~=1.1.0
 requests~=2.32.3
 pathlib~=1.0.1
 fitz~=0.0.1.dev2
+easyocr~=1.7.2
+paddleocr~=3.1.0
+doctr~=1.9.0
+numpy~=2.2.6
+tqdm~=4.67.1
+openai~=1.93.0

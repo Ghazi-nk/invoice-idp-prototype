@@ -6,11 +6,11 @@ import time
 from pathlib import Path
 
 from utils.config import INVOICES_DIR, GROUND_TRUTH_DIR as GT_DIR, OLLAMA_MODEL
-from utils.pdf_utils import pdf_to_png
+from utils.pdf_utils import pdf_to_png, extract_text_if_searchable
 from document_digitalization.ocr import tesseract_png_to_text, easyocr_png_to_text
 from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
 from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
-from utils.searchable_pdf import extract_text_if_searchable
+
 from utils.llm_utils import ask_ollama_for_invoice_fields
 
 # Config
