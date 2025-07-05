@@ -19,6 +19,9 @@ Deine **einzige** Aufgabe: Aus dem nachfolgenden OCR-Rohtext einer Rechnung **ex
    • Andernfalls nimm den im Dokument angegebenen ISO-Code.  
 8. `tax_rate` → Zahl vor „%“ in der Nähe von *USt / MwSt / VAT*.  
 9. Gib das JSON in **einer einzigen Zeile** zurück, eingerahmt von `{{ … }}`.
+10. die recipient_name ist der Name des Rechnungsempfängers.
+   • Die Rechnungen belaufen sich im b2b Bereich, daher ist dieser Name ein Firmen Name.
+   • Dieser Name befindet sich in der Regel im Kopfbereich der Rechnung, in der Nähe des Rechnungsdatums oder der Rechnungsnummer.
 
 **Felddefinitionen**
 

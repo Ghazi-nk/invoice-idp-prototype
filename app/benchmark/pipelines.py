@@ -1,20 +1,20 @@
 import os
 from utils.pdf_utils import pdf_to_png
-from ocr import ocr_png_to_text
+from document_digitalization.ocr import easyocr_png_to_text
 from utils.llm_utils import ask_ollama_for_invoice_fields
 from utils.searchable_pdf import extract_text_if_searchable
-from layoutlmv3_png2txt import layoutlm_image_to_text
-from doctr_pdf2txt import doctr_pdf_to_text
+from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
+from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
 
 from utils.config import SAMPLE_FOLDER
 
 
-def process_single_pdf_ocr(pdf_path: str) -> str | None:
+def process_single_pdf_easyocr(pdf_path: str) -> str | None:
     base = os.path.splitext(os.path.basename(pdf_path))[0]
     print(f"[Info] Verarbeite {base}.pdf...")
     try:
         png = pdf_to_png(pdf_path)
-        text = ocr_png_to_text(png)
+        text = easyocr_png_to_text(png)
 
         return text
     except Exception as e:

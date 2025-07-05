@@ -91,5 +91,5 @@ def doctr_pdf_to_text(pdf_path: str) -> str:
 # -------------------------
 
 if __name__ == "__main__":
-    output_str = doctr_pdf_to_text("results/input/BRE-02.pdf")
+    output_str = doctr_pdf_to_text("../results/input/BRE-02.pdf")
     print(output_str)
