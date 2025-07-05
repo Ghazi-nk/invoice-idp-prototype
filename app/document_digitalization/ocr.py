@@ -2,9 +2,14 @@ import subprocess
 import os
 import json
 
+
 import easyocr
 
+
 from typing import List
+
+from paddleocr import PaddleOCR
+
 from utils.config import TMP_DIR, TESSERACT_CMD
 
 def tesseract_png_to_text(png_path: str) -> str:
@@ -31,16 +36,39 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
     full_text = "\n".join(texts)
     return json.dumps(full_text, ensure_ascii=False)
 
+def paddleocr_png_to_text(png_path: str, lang: str = 'german') -> str:
+    if PaddleOCR is None:
+        raise RuntimeError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
+
+    # Re-enable textline orientation for better accuracy
+    ocr = PaddleOCR(use_textline_orientation=True, lang=lang)
+
+    result = ocr.predict(png_path)
+
+    texts = []
+    # Check if the result and its first element exist
+    if result and result[0]:
+        # The result is a dictionary, extract text from the 'rec_texts' key
+        image_result = result[0]
+        if 'rec_texts' in image_result:
+            texts = image_result['rec_texts']
+
+    full_text = "\n".join(texts)
+
+    return json.dumps(full_text, ensure_ascii=False)
 
 if __name__ == "__main__":
     # Example usage
     png_file = "../results/tmp/BRE-03_page1.png"  # Replace with your image file path
     try:
-        text = tesseract_png_to_text(png_file)
-        print("Tesseract OCR Output:", text)
+        #text = tesseract_png_to_text(png_file)
+        #print("Tesseract OCR Output:", text)
 
         #easyocr_text = easyocr_png_to_text(png_file)
         #print("EasyOCR Output:", easyocr_text)
+
+        paddleocr_text = paddleocr_png_to_text(png_file)
+        print("PaddleOCR Output:", paddleocr_text)
 
     except RuntimeError as e:
         print(f"Error: {e}")

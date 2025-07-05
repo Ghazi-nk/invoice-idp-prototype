@@ -1,20 +1,18 @@
 import json
-import os
+
 from pathlib import Path
 from typing import List, Dict, Any
 
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
-# Adjust this to wherever your temp files should live
+
 from utils.config import TMP_DIR
 
 
-# -------------------------
-# Core OCR pipeline
-# -------------------------
 
-def run_ocr(pdf_path: str):
+# Core OCR pipeline
+def _run_ocr(pdf_path: str):
     """Run Doctr OCR on ``pdf_path`` and return the raw result object."""
     predictor = ocr_predictor(pretrained=True)
     document = DocumentFile.from_pdf(pdf_path)
@@ -25,7 +23,7 @@ def run_ocr(pdf_path: str):
 # Post-processing helpers
 # -------------------------
 
-def extract_line_boxes(result) -> List[Dict[str, Any]]:
+def _extract_line_boxes(result) -> List[Dict[str, Any]]:
     """Flatten a Doctr ``result`` into a list of line-level dictionaries.
 
     Each item has the form {"text": str, "bbox": [x0, y0, x1, y1], "page": int}.
@@ -56,7 +54,7 @@ def extract_line_boxes(result) -> List[Dict[str, Any]]:
     return lines
 
 
-def save_lines_as_txt(lines: List[Dict[str, Any]], pdf_path: str) -> str:
+def _save_lines_as_txt(lines: List[Dict[str, Any]], pdf_path: str) -> str:
     """Save each line dict as a JSON line in a .txt file and return its path."""
     base = Path(pdf_path).stem
     out_path = Path(TMP_DIR) / f"{base}.txt"
@@ -78,10 +76,10 @@ def doctr_pdf_to_text(pdf_path: str) -> str:
     save each as JSON-lines in TMP_DIR/<basename>.txt,
     and return the full JSON array as a string.
     """
-    result = run_ocr(pdf_path)
-    lines = extract_line_boxes(result)
+    result = _run_ocr(pdf_path)
+    lines = _extract_line_boxes(result)
     # save as JSON-lines
-    save_lines_as_txt(lines, pdf_path)
+    _save_lines_as_txt(lines, pdf_path)
     # return JSON array string
     return json.dumps(lines, ensure_ascii=False)
 

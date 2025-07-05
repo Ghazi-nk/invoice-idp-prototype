@@ -13,18 +13,13 @@ from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
 from utils.searchable_pdf import extract_text_if_searchable
 from utils.llm_utils import ask_ollama_for_invoice_fields
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Konfiguration
-# ──────────────────────────────────────────────────────────────────────────────
+# Config
 MODEL_SAFE         = OLLAMA_MODEL.replace(":", "_")
 OUTPUT_SUMMARY_CSV = f"benchmark_summary_{MODEL_SAFE}.csv"
 OUTPUT_DETAIL_CSV  = f"benchmark_details_{MODEL_SAFE}.csv"
 USE_SEARCHABLE     = False
 PIPELINES          = ["easyocr", "tesseract", "layoutlm", "doctr"]
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Helper: Canonicalisation & Normalisation
-# ──────────────────────────────────────────────────────────────────────────────
 _IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b")
 
 def canon_text(s: str | None) -> str:
