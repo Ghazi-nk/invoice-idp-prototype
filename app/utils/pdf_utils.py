@@ -60,3 +60,25 @@ def extract_text_if_searchable(pdf_path: str) -> str:
 
     # kein Text-Layer
     return ""
+
+
+def pdf_to_png_with_pymupdf(pdf_path: str, zoom: float = 3.0) -> list[str]:
+    """
+    Konvertiert PDF-Seiten zu PNG mit hoher Qualität (durch PyMuPDF).
+    zoom=3.0 entspricht etwa 300 DPI.
+    """
+    doc = fitz.open(pdf_path)
+    if doc.page_count == 0:
+        raise RuntimeError(f"Keine Seiten in PDF: {pdf_path}")
+
+    base = os.path.splitext(os.path.basename(pdf_path))[0]
+    png_paths = []
+
+    for i, page in enumerate(doc):
+        mat = fitz.Matrix(zoom, zoom)  # zoom 2.0~200dpi, 3.0~300dpi
+        pix = page.get_pixmap(matrix=mat, alpha=False)
+        png_path = os.path.join(TMP_DIR, f"{base}_page{i + 1}.png")
+        pix.save(png_path)
+        png_paths.append(png_path)
+
+    return png_paths

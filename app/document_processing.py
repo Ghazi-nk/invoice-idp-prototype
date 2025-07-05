@@ -1,37 +1,26 @@
 import os
-from utils.pdf_utils import pdf_to_png, pdf_to_png_multiple, extract_text_if_searchable
+from utils.pdf_utils import pdf_to_png, pdf_to_png_multiple, extract_text_if_searchable, pdf_to_png_with_pymupdf
 from document_digitalization.ocr import easyocr_png_to_text
 from utils.llm_utils import ask_ollama_for_invoice_fields
-
 from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
 from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
 
-from utils.config import SAMPLE_FOLDER
+from utils.config import SAMPLE_PDF_PATH, SAMPLE_M_PDF_PATH
 
-
-def process_single_pdf_easyocr(pdf_path: str) -> str | None:
+def easyocr_process_pdf_invoice(pdf_path: str) -> str | None:
     base = os.path.splitext(os.path.basename(pdf_path))[0]
     print(f"[Info] Verarbeite {base}.pdf...")
+    text = ""
     try:
-        png = pdf_to_png(pdf_path)
-        text = easyocr_png_to_text(png)
-
-        return text
-    except Exception as e:
-        print(f"[Error] {base}: {e}")
-        return None
-
-def process_multiple_page_pdf_easyocr(pdf_path: str) -> str | None:
-    base = os.path.splitext(os.path.basename(pdf_path))[0]
-    print(f"[Info] Verarbeite {base}.pdf...")
-    try:
-        pngs = pdf_to_png_multiple(pdf_path)
+        pngs = pdf_to_png_with_pymupdf(pdf_path)
         for png in pngs:
-            text = easyocr_png_to_text(png)
-            text.append("\npage number " + str(pngs.index(png) + 1))
-        texts = [easyocr_png_to_text(png) for png in pngs]
-
-        return "\n".join(texts)
+            # Append page number to the text
+            text += "\npage number " + str(pngs.index(png) + 1) + "\n"
+            text += easyocr_png_to_text(png)
+            print(f"[Info] {base}.pdf Seite {pngs.index(png) + 1} verarbeitet.") #todo: remove
+            print(f"[Info] {base}.pdf Seite {pngs.index(png) + 1} Text: {text}...")  #todo: remove
+        print(f"text: {text}...")  #todo: remove
+        return text
     except Exception as e:
         print(f"[Error] {base}: {e}")
         return None
@@ -91,18 +80,6 @@ def process_single_pdf_doctr(pdf_path: str) -> str | None:
 
 
 
-# if __name__ == "__main__":
-#     # ── STATIC EXAMPLE ARGS ───────────────────────────────────────────────────
-#     pipeline_type     = "doctr"                      # one of: "ocr", "layoutlm", "doctr"
-#     process_searchable = False                       # True = use embedded text when available
-#     # ────────────────────────────────────────────────────────────────────────
-#
-#     results = process_multiple_pdfs(
-#         folder_path=SAMPLE_FOLDER,
-#         pipeline_type=pipeline_type,
-#         process_searchable=process_searchable
-#     )
-
-#     for idx, invoice_fields in enumerate(results, start=1):
-#         print(f"\n--- Result {idx} ---")
-#         print(invoice_fields)
+if __name__ == "__main__":
+    # Example usage
+    results = easyocr_process_pdf_invoice(SAMPLE_M_PDF_PATH)
