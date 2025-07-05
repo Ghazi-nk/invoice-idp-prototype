@@ -1,0 +1,12 @@
+{
+  "invoice_date": "25.12.2025",
+  "vendor_name": "Firma Max Mustermann",
+  "invoice_number": "1001",
+  "recipient_name": "Dietrich Müller",
+  "total_amount": 2673.93,
+  "currency": "EUR",
+  "purchase_order_number": null,
+  "ust-id": null,
+  "iban": "5550011",
+  "tax_rate": 19.0
+}
