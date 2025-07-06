@@ -1,13 +1,14 @@
 import os
 from typing import Callable
 
-from utils.pdf_utils import pdf_to_png, pdf_to_png_multiple, extract_text_if_searchable, pdf_to_png_with_pymupdf
+from utils.pdf_utils import pdf_to_png_multiple, extract_text_if_searchable, pdf_to_png_with_pymupdf
 from document_digitalization.ocr import easyocr_png_to_text, tesseract_png_to_text, paddleocr_png_to_text
 from utils.llm_utils import ask_ollama_for_invoice_fields
 from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
 from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
 
 from utils.config import SAMPLE_PDF_PATH, SAMPLE_M_PDF_PATH
+
 
 def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> str | None:
 
@@ -70,7 +71,7 @@ def layoutlm_process_pdf(pdf_path: str) -> str | None:
 if __name__ == "__main__":
     # Example usage
     #print(paddleocr_process_pdf(SAMPLE_M_PDF_PATH))
-    #print(layoutlm_process_pdf(SAMPLE_M_PDF_PATH))
+    print(layoutlm_process_pdf(SAMPLE_M_PDF_PATH))
     #print(tesseract_process_pdf(SAMPLE_M_PDF_PATH))
     #print(easyocr_process_pdf(SAMPLE_M_PDF_PATH))
-    print(doctr_pdf_to_text(SAMPLE_M_PDF_PATH))
+    #print(doctr_pdf_to_text(SAMPLE_M_PDF_PATH))

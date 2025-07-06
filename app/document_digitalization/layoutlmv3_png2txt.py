@@ -21,9 +21,9 @@ def layoutlm_image_to_text(image_path: str) -> str:
     und liefert das komplette JSON‐Array als String zurück.
     """
     image = _load_image(image_path)
-    inputs = _PROCESSOR(images=image, return_tensors="pt")
-    # nur Forward‐Pass für Tokenization + bboxes
-    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")})
+    inputs = _PROCESSOR(images=image, return_tensors="pt", truncation=True, max_length=512)    # nur Forward‐Pass für Tokenization + bboxes
+
+    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")}) #todo: exception thrown here "index out of range in self None"
 
     tokens = _flatten_tokens(inputs)
     sorted_lines = _bucket_tokens_by_line(tokens)
@@ -161,6 +161,6 @@ def _save_and_serialize(chunks: List[Dict], image_path: str) -> str:
     return json.dumps(chunks, ensure_ascii=False)
 
 
-# --- Test‐Harness (optional) ---
+# --- Test ---
 if __name__ == "__main__":
     print(layoutlm_image_to_text(SAMPLE_PNG_PATH))
