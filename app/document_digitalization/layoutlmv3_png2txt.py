@@ -23,7 +23,7 @@ def layoutlm_image_to_text(image_path: str) -> str:
     image = _load_image(image_path)
     inputs = _PROCESSOR(images=image, return_tensors="pt", truncation=True, max_length=512)    # nur Forward‐Pass für Tokenization + bboxes
 
-    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")}) #todo: exception thrown here "index out of range in self None"
+    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")})
 
     tokens = _flatten_tokens(inputs)
     sorted_lines = _bucket_tokens_by_line(tokens)

@@ -59,13 +59,13 @@ def paddleocr_png_to_text(png_path: str, lang: str = 'german') -> str:
 
 if __name__ == "__main__":
     # Example usage
-    png_file = "../results/tmp/BRE-03_page1.png"  # Replace with your image file path
+    png_file = "../results/tmp/BMRE-01_page2.png"  # Replace with your image file path
     try:
-        #text = tesseract_png_to_text(png_file)
-        #print("Tesseract OCR Output:", text)
+        text = tesseract_png_to_text(png_file)
+        print("Tesseract OCR Output:", text)
 
-        #easyocr_text = easyocr_png_to_text(png_file)
-        #print("EasyOCR Output:", easyocr_text)
+        easyocr_text = easyocr_png_to_text(png_file)
+        print("EasyOCR Output:", easyocr_text)
 
         paddleocr_text = paddleocr_png_to_text(png_file)
         print("PaddleOCR Output:", paddleocr_text)
