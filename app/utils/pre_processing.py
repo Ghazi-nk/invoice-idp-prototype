@@ -42,42 +42,6 @@ def _format_layoutlm_output(elements: List[Dict[str, Any]]) -> str:
 
 # --- ÖFFENTLICHE PRE-PROCESSING FLOWS ------------------------------------------
 
-def preprocess_doctr_output(raw_json_str: str) -> str:
-    """Verarbeitet, formatiert und bereinigt den JSON-Output von Doctr."""
-    try:
-        elements = json.loads(raw_json_str)
-        formatted_text = _format_doctr_output(elements)
-        return _preprocess_text_content(formatted_text)
-    except json.JSONDecodeError:
-        # Falls es kein valides JSON ist, als reinen Text behandeln
-        return _preprocess_text_content(raw_json_str)
-
-
-def preprocess_layoutlm_output(raw_text: str) -> str: #todo: fix layoutlm preprocessing. its deleting the whole text
-    """Verarbeitet, formatiert und bereinigt den zeilenweisen JSON-Output von LayoutLM."""
-    elements = []
-    current_page = 1
-    for line in raw_text.splitlines():
-        line = line.strip()
-        if not line: continue
-
-        # Seiteninformation extrahieren
-        match = re.match(r'^(?:page|seite)\s*(\d+):?$', line.lower())
-        if match:
-            current_page = int(match.group(1))
-        # JSON-Zeile verarbeiten
-        elif line.startswith('{') and line.endswith('}'):
-            try:
-                data = json.loads(line)
-                data['page'] = current_page
-                elements.append(data)
-            except json.JSONDecodeError:
-                pass  # Ignoriere fehlerhafte JSON-Zeilen
-
-    formatted_text = _format_layoutlm_output(elements)
-    return _preprocess_text_content(formatted_text)
-
-
 def preprocess_plain_text_output(raw_text: str) -> str:
     """Bereinigt reinen OCR-Text von Engines wie Tesseract, EasyOCR etc."""
     # Entfernt unsere eigenen Seiten-Header wie "--- Seite 1 ---"

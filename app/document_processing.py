@@ -16,7 +16,7 @@ unchanged for backward compatibility.
 from __future__ import annotations
 
 import os
-from typing import Callable, Dict, List, Any
+from typing import Callable, Dict, List
 
 # Correctly import the newly refactored doctr function
 from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
@@ -27,9 +27,7 @@ from document_digitalization.ocr import (
     paddleocr_png_to_text,
 )
 
-from pre_processing import (
-    preprocess_doctr_output,
-    preprocess_layoutlm_output,
+from utils.pre_processing import (
     preprocess_plain_text_output,
 )
 from utils.config import SAMPLE_PDF_PATH
@@ -166,6 +164,10 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", c
 
     # 3. Extract fields using the LLM with the list of cleaned page texts
     return extract_invoice_fields_from_text(final_text_parts)
+
+def get_available_engines() -> List[str]:
+    """Returns a list of all supported OCR engine names."""
+    return list(_OCR_ENGINE_PDF_MAP.keys())
 
 
 # ... (The __main__ block remains unchanged)
