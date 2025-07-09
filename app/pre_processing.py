@@ -29,7 +29,7 @@ def _preprocess_text_content(txt: str) -> str:
 def _format_doctr_output(elements: List[Dict[str, Any]]) -> str:
     """Formatiert Doctr-Output: Jede Zeile enthält Text, Bbox und Seite."""
     elements.sort(key=lambda item: (item.get('page', 1), item['bbox'][1], item['bbox'][0]))
-    lines_with_all_info = [f"{item['text']} bbox={item['bbox']} page={item['page']}" for item in elements]
+    lines_with_all_info = [f"{item['text']} bbox={item['bbox']}" for item in elements]
     return "\n".join(lines_with_all_info)
 
 

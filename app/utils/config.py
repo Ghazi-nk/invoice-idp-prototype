@@ -12,6 +12,7 @@ SAMPLE_M_PDF_PATH = os.getenv("SAMPLE_M_PDF_PATH")
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 GENERATE_ENDPOINT = f"{OLLAMA_BASE_URL}/api/generate"
+CHAT_ENDPOINT = f"{OLLAMA_BASE_URL}/api/chat"
 
 INPUT_DIR  = os.getenv("INPUT_DIR")
 OUTPUT_DIR = os.getenv("OUTPUT_DIR")
