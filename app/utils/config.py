@@ -4,6 +4,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+# Benchmark envs
+
+LABELS_DIR = os.getenv("LABELS_DIR")
+INVOICES_DIR = os.getenv("INVOICES_DIR")
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL")
 SAMPLE_PDF_PATH = os.getenv("SAMPLE_PDF_PATH")
 SAMPLE_PNG_PATH = os.getenv("SAMPLE_PNG_PATH")
@@ -20,7 +26,7 @@ TMP_DIR    = os.getenv("TMP_DIR")
 
 TESSERACT_CMD = os.getenv("TESSERACT_CMD")
 
-INVOICES_DIR = os.getenv("INVOICES_DIR")
+SAMPLE_INVOICES_DIR = os.getenv("SAMPLE_INVOICES_DIR")
 GROUND_TRUTH_DIR = os.getenv("GROUND_TRUTH_DIR")
 REPORTS_DIR = os.getenv("REPORTS_DIR")
 SAMPLE_FOLDER = os.getenv("SAMPLE_FOLDER")
