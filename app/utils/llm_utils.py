@@ -18,7 +18,7 @@ BASE_DIR    = Path(__file__).resolve().parents[2]
 PROMPT_FILE = BASE_DIR / "resources" / "Prompts" / "prompt.txt"
 PROMPT_TXT  = PROMPT_FILE.read_text(encoding="utf-8")
 
-def ask_ollama_for_invoice_fields(ocr_text: str) -> dict:
+def ollama_extract_invoice_fields(ocr_text: str) -> dict:
     prompt = f"{PROMPT_TXT}\n{ocr_text}\n"
     body   = {"model": OLLAMA_MODEL, "prompt": prompt, "stream": False}
 
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     {"text": "Mustermann Malerei GmbH. Â« Hauptstrasse 123 Â¢ 13507 Berlin", "bbox": [289, 918, 713, 927]}
     {"text": "UID-Nummer: DE12345678", "bbox": [409, 929, 593, 937]}
     """
-    extracted = ask_ollama_for_invoice_fields(txt)
+    extracted = ollama_extract_invoice_fields(txt)
     print(extracted)
     print(json.dumps(extracted, indent=2, ensure_ascii=False))
 
