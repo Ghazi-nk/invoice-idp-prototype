@@ -1,0 +1,46 @@
+### Aufgabe
+Extrahiere aus den folgenden strukturierten OCR-Daten **exakt** die definierten Felder und gib sie als JSON-Objekt zurück.
+
+### Datenformat Erklärung
+Die Daten werden als Textzeilen mit zugehörigen Bounding-Box-Koordinaten (`bbox=[x0, y0, x1, y1]`) bereitgestellt. Nutze die `bbox`-Koordinaten, um das Layout der Rechnung zu verstehen und die korrekten Werte zuzuordnen.
+
+### Layout-Regeln zur Interpretation der `bbox`
+- **Vertikale Position**: Ein niedriger `y`-Wert bedeutet, der Text steht **oben** auf der Seite (z.B. Rechnungsdatum, Empfänger). Ein hoher `y`-Wert bedeutet, der Text steht **unten** (z.B. Gesamtbetrag, Bankverbindung).
+- **Horizontale Position**: In Tabellen steht Text mit niedrigem `x`-Wert **links** (z.B. Artikelbeschreibung), Text mit hohem `x`-Wert steht **rechts** (z.B. Preis, Betrag).
+- **Nähe**: Elemente mit sehr ähnlichen `y`-Werten befinden sich auf der **gleichen Zeile** und gehören wahrscheinlich zusammen.
+
+### Felddefinitionen
+- `invoice_date`: Datum im Format DD.MM.YYYY
+- `vendor_name`: Name des Rechnungsstellers (Verkäufer)
+- `invoice_number`: Die Rechnungs- oder Belegnummer
+- `recipient_name`: Name des Rechnungsempfängers (Käufer)
+- `total_amount`: Der Brutto-Gesamtbetrag als Zahl (z.B. 430.78)
+- `currency`: ISO-Währungscode (z.B. EUR, CHF)
+- `purchase_order_number`: Die Bestell- oder Auftragsnummer, sonst `null`
+- `ust-id`: Die Steuernummer oder USt-IdNr. des Verkäufers
+- `iban`: Die IBAN des Verkäufers
+- `tax_rate`: Der angewendete Umsatzsteuersatz als Zahl (z.B. 19.0)
+
+### Allgemeine Regeln
+1.  **Fehlender Wert**: Wenn ein Wert nicht gefunden wird, setze `null`.
+2.  **Zahlenformat**: Gib Zahlen ohne Anführungszeichen an. Benutze einen **Punkt** als Dezimaltrennzeichen.
+3.  **IBAN**: Suche gezielt nach den Schlüsselwörtern **"IBAN" oder "Konto"**.
+4.  **USt-Id**: Ignoriere die "HRB"-Nummer (Handelsregisternummer).
+
+### Beispiel
+**Input Text:**
+---
+Datum: 06.11.2012 bbox=[1224, 324, 1511, 340]
+Mustermann Malerei GmbH., bbox=[980, 148, 1386, 166]
+Brutto: 773.10 € bbox=[1121, 835, 1521, 852]
+IBAN: 1234567890 bbox=[181, 956, 1177, 973]
+---
+**Output JSON:**
+<json_output>
+{"invoice_date":"06.11.2012","vendor_name":"Mustermann Malerei GmbH.","invoice_number":null,"recipient_name":null,"total_amount":773.10,"currency":"EUR","purchase_order_number":null,"ust-id":null,"iban":"1234567890","tax_rate":null}
+</json_output>
+
+### Finale Aufgabe
+Liefere das JSON-Objekt für die folgenden Daten **ausschließlich** innerhalb von `<json_output>` Tags.
+
+Hier sind die strukturierten OCR-Daten der neuen Rechnung:
