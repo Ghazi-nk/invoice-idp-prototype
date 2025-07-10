@@ -1,67 +1,35 @@
-# pre_processing.py
+# FILE: utils/pre_processing.py
+# SIMPLIFIED
 
-import json
 import re
-from typing import List, Dict, Any
 
-
-# --- PRIVATE HELPER -----------------------------------------------------------
+# --- PRIVATE HELPER ---
 
 def _preprocess_text_content(txt: str) -> str:
-    """Bereinigt einen einzelnen Textblock von typischen OCR-Fehlern."""
+    """Cleans a single text block of typical OCR errors."""
     if not txt:
         return ""
-    # Korrigiert häufige IBAN-Fehler (A7 -> AT)
+    # Corrects common IBAN errors (A7 -> AT)
     txt = re.sub(r"\bA7(\d{2})", r"AT\1", txt)
-    # Entfernt überflüssige Anführungszeichen
+    # Removes superfluous apostrophes
     txt = txt.replace("'", "")
-    # Korrigiert Währungssymbole
+    # Corrects currency symbols
     txt = txt.replace("Â€", "€")
-    # Vereinheitlicht Dezimaltrennzeichen in Geldbeträgen
+    # Standardizes decimal separators in amounts
     txt = re.sub(r"(\d),(\d{2})(\s*€?)", r"\1.\2\3", txt)
-    # Verbindet durch Zeilenumbruch getrennte Wörter
+    # Joins words separated by a newline and hyphen
     txt = re.sub(r"(\w+)-\n(\w+)", r"\1\2", txt)
-    # Entfernt Seitenzahlanzeiger am Zeilenanfang
+    # Removes page number indicators from the start of lines
     txt = re.sub(r"^\s*page \d+:\s*", "", txt, flags=re.MULTILINE | re.IGNORECASE)
-
-    # print(f"[debug] Preprocessed text: {txt.strip()}")
     return txt.strip()
 
 
-def _format_doctr_output(elements: List[Dict[str, Any]]) -> str:
-    """Formatiert Doctr-Output: Jede Zeile enthält Text, Bbox und Seite."""
-    elements.sort(key=lambda item: (item.get('page', 1), item['bbox'][1], item['bbox'][0]))
-    lines_with_all_info = [f"{item['text']} bbox={item['bbox']}" for item in elements]
-    return "\n".join(lines_with_all_info)
-
-
-def _format_layoutlm_output(elements: List[Dict[str, Any]]) -> str:
-    """Formatiert LayoutLM-Output: Jede Zeile enthält Text und Bbox."""
-    elements.sort(key=lambda item: (item.get('page', 1), item['bbox'][1], item['bbox'][0]))
-    lines_with_bbox = [f"{item['text']} bbox={item['bbox']}" for item in elements]
-    return "\n".join(lines_with_bbox)
-
-
-# --- ÖFFENTLICHE PRE-PROCESSING FLOWS ------------------------------------------
-
-def preprocess_doctr_output(raw_json_str: str) -> str:
-    """Verarbeitet, formatiert und bereinigt den JSON-Output von Doctr."""
-    try:
-        elements = json.loads(raw_json_str)
-        formatted_text = _format_doctr_output(elements)
-        return _preprocess_text_content(formatted_text)
-    except json.JSONDecodeError:
-        # Falls es kein valides JSON ist, als reinen Text behandeln
-        return _preprocess_text_content(raw_json_str)
-
-
+# --- PUBLIC PRE-PROCESSING FLOW ---
 
 def preprocess_plain_text_output(raw_text: str) -> str:
-    """Bereinigt reinen OCR-Text von Engines wie Tesseract, EasyOCR etc."""
-    # Entfernt unsere eigenen Seiten-Header wie "--- Seite 1 ---"
+    """Cleans plain OCR text from engines like Tesseract, Doctr, etc."""
+    # Removes our custom page headers like "--- Seite 1 ---"
     processed_text = re.sub(r"\n?---\s*Seite\s*\d+\s*---\n?", "\n", raw_text, flags=re.IGNORECASE)
-    # Entfernt leere Zeilen, die durch das Entfernen der Header entstehen können
+    # Removes blank lines that can result from removing headers
     processed_text = "\n".join([line for line in processed_text.splitlines() if line.strip()])
     return _preprocess_text_content(processed_text)
-
-

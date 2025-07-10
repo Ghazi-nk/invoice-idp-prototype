@@ -15,7 +15,7 @@ from utils.config import (
 )
 
 
-def ollama_extract_invoice_fields(ocr_pages: List[str], is_ocr: bool = True) -> Dict:
+def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     """
     Extracts invoice fields by sending OCR text to an LLM, using a prompt strategy
     based on the type of OCR data provided.
@@ -23,10 +23,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str], is_ocr: bool = True) -> 
     # 1. Load the appropriate prompt files based on the engine type
     try:
         system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
-        if is_ocr:
-            user_prompt = Path(USER_PROMPT_OCR_FILE).read_text(encoding="utf-8")
-        else:
-            user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
+        user_prompt = Path(USER_PROMPT_OCR_FILE).read_text(encoding="utf-8")
     except FileNotFoundError as e:
         raise RuntimeError(f"Could not find a required prompt file: {e}")
 
