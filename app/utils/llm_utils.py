@@ -10,7 +10,6 @@ from utils.config import (
     CHAT_ENDPOINT,
     OLLAMA_MODEL,
     SYSTEM_PROMPT_FILE,
-    USER_PROMPT_FILE,
     USER_PROMPT_OCR_FILE
 )
 
