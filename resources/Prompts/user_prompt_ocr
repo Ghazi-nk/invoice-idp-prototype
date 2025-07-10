@@ -1,38 +1,18 @@
+############################
+###        USER          ###
+############################
 ### Aufgabe
-Extrahiere aus dem folgenden OCR-Rohtext **exakt** die definierten Felder und gib sie als JSON-Objekt zurück.
+Extrahiere aus dem folgenden OCR-Rohtext **exakt** die zehn
+definierten Felder und gib sie als JSON-Objekt zurück.
 
-### Felddefinitionen
-- `invoice_date`: Datum im Format DD.MM.YYYY
-- `vendor_name`: Name des Rechnungsstellers (Verkäufer)
-- `invoice_number`: Die Rechnungs- oder Belegnummer
-- `recipient_name`: Name des Rechnungsempfängers (Käufer)
-- `total_amount`: Der Brutto-Gesamtbetrag als **Text**, exakt wie im Dokument
-- `currency`: ISO-Währungscode (z.B. EUR, CHF)
-- `purchase_order_number`: Die Bestell- oder Auftragsnummer, sonst `null`
-- `ust-id`: Die Steuernummer oder USt-IdNr. des Verkäufers
-- `iban`: Die IBAN des Verkäufers
-- `tax_rate`: Der angewendete Umsatzsteuersatz als **Text** (z.B. "19,00 %" or "19")
+### Regeln (Kurzfassung)
+1. Fehlende Werte → `null`, keine leeren Strings.
+2. total_amount & tax_rate = Zahl mit **Punkt** als Dezimaltrennzeichen, zwei Nachkommastellen, keine Tausendertrennung.
+3. Nur die zehn Schlüssel in genau dieser Reihenfolge.
+4. IBAN = erste **[A-Z]{2}[0-9A-Z]{13,32}** nach »IBAN« oder »Konto«.
+5. USt-Id = **[A-Z]{2}[0-9]{8,12}** nach »USt-Id«, »USt-IdNr«, »VAT ID«; *Steuernummern ignorieren*.
+6. Ergebnis **ausschließlich** in einer Zeile zwischen `<json_output>`-Tags ausgeben – ohne weiteren Text.
 
-### Regeln
-1.  **Fehlender Wert**: Wenn ein Wert nicht gefunden wird, setze `null`.
-2.  **IBAN**: Suche gezielt nach den Schlüsselwörtern **"IBAN" oder "Konto"**.
-3.  **USt-Id**: Extrahiere die "Steuernummer" oder "USt-IdNr.". Ignoriere die "HRB"-Nummer.
-
-### Beispiel
-**Input Text:**
----
-Rechnungs-Nr.: 4711-2024
-Datum: 03.05.2024
-Lieferant: Muster GmbH
-Gesamtbetrag: 1.250,90 EUR
-Bankverbindung: Konto DE12345678901234567800
----
-**Output JSON:**
-<json_output>
-{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":null,"total_amount":"1.250,90 EUR","currency":"EUR","purchase_order_number":null,"ust-id":null,"iban":"DE12345678901234567800","tax_rate":null}
-</json_output>
-
-### Finale Aufgabe
-Liefere das JSON-Objekt für den folgenden Text **ausschließlich** innerhalb von `<json_output>` Tags.
-
-Hier ist der OCR-Text der neuen Rechnung:
+### OCR-Text
+```plaintext
+[Hier den OCR-Rohtext einfügen]
