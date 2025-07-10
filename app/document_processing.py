@@ -15,7 +15,6 @@ from __future__ import annotations
 import os
 from typing import Callable, Dict, List
 
-# Correctly import the newly refactored doctr function
 from document_digitalization.doctr_pdf2txt import doctr_pdf_to_text
 from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
 from document_digitalization.ocr import (
@@ -28,24 +27,19 @@ from utils.pre_processing import (
     preprocess_plain_text_output,
     preprocess_doctr_output,
 )
+# --- NEW: Import the post-processing function ---
+from utils.post_processing import finalize_extracted_fields
 from utils.config import SAMPLE_PDF_PATH
 from utils.llm_utils import ollama_extract_invoice_fields
 from utils.pdf_utils import pdf_to_png_with_pymupdf
 
 
-# =============================================================================
-# --- Document digitalization -------------------------------------------------
-# =============================================================================
-
+# (The code for process_pdf_with_ocr, easyocr_process_pdf, etc. remains unchanged)
+# ...
 def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> List[str] | None:
-    """
-    Processes each page of a PDF with a given OCR function.
-    (This function is for engines that work on a page-image-by-page-image basis).
-    """
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
     ocr_engine_name = ocr_function.__name__
     print(f"\n[Info] Verarbeite '{base_name}.pdf' mit der Engine '{ocr_engine_name}'…")
-
     pages_text: List[str] = []
     try:
         png_pages: List[str] = pdf_to_png_with_pymupdf(pdf_path)
@@ -56,23 +50,14 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
             print(f"[Info] Seite {page_num} von '{base_name}.pdf' erfolgreich verarbeitet.")
         return pages_text
     except Exception as e:
-        print(
-            f"[Error] Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
+        print(f"[Error] Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
         return None
-
-
 def easyocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, easyocr_png_to_text)
-
-
 def tesseract_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, tesseract_png_to_text)
-
-
 def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, paddleocr_png_to_text)
-
-
 def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, layoutlm_image_to_text)
 
@@ -95,41 +80,30 @@ _OCR_ENGINE_PDF_MAP: Dict[str, Callable[[str], List[str] | None]] = {
 
 
 def ocr_pdf(pdf_path: str, *, engine: str = "easyocr") -> List[str]:
-    """
-    Runs a selected OCR engine on a PDF and returns a list of text per page.
-    """
     engine = engine.lower()
     if engine not in _OCR_ENGINE_PDF_MAP:
         valid_options = ", ".join(_OCR_ENGINE_PDF_MAP.keys())
         raise ValueError(f"Unsupported OCR engine '{engine}'. Valid options are: {valid_options}.")
-
     ocr_function = _OCR_ENGINE_PDF_MAP[engine]
     result = ocr_function(pdf_path)
     return result or []
 
 
 def clean_ocr_text(raw_text: str, *, engine: str) -> str:
-    """
-    Selects the appropriate pre-processing flow based on the engine.
-    """
     engine = engine.lower()
-    # Engines producing structured JSON data get the doctr preprocessor
     if engine in {'doctr', 'layoutlm'}:
-        # The `preprocess_doctr_output` is assumed to handle the JSON string format
         return preprocess_doctr_output(raw_text)
-
-    # Default for plain text engines like Tesseract, EasyOCR, etc.
     return preprocess_plain_text_output(raw_text)
 
 
 def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", clean: bool = True) -> Dict:
-    """Full pipeline: PDF ➜ OCR (per page) ➜ clean (per page) ➜ Ollama ➜ dict."""
+    """Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ post-process ➜ final dict."""
     # 1. Get raw text for each page
     pages_raw_text = ocr_pdf(pdf_path, engine=engine)
     print(f"[Info] OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_text)} Seiten gefunden.")
 
-    final_text_parts: List[str] = []
     # 2. Clean text for each page individually if requested
+    final_text_parts: List[str] = []
     if clean:
         for i, page_text in enumerate(pages_raw_text):
             cleaned_page_text = clean_ocr_text(page_text, engine=engine)
@@ -140,22 +114,19 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", c
     else:
         final_text_parts = pages_raw_text
 
-    # 3. Determine the data format and extract fields using the LLM
-    # is_ocr = True for plain text engines, False for structured engines
+    # 3. Determine the data format and get initial extraction from LLM
     is_ocr = False if engine.lower() in {'doctr', 'layoutlm'} else True
+    llm_output = ollama_extract_invoice_fields(final_text_parts, is_ocr=is_ocr)
 
-    return ollama_extract_invoice_fields(final_text_parts, is_ocr=is_ocr)
+    # --- NEW: 4. Apply post-processing to finalize the dictionary ---
+    final_dict = finalize_extracted_fields(llm_output)
+
+    return final_dict
 
 
 def get_available_engines() -> List[str]:
     """Returns a list of all supported OCR engine names."""
     return list(_OCR_ENGINE_PDF_MAP.keys())
-
-
-# =============================================================================
-# --- Main Block for Quick Testing ---
-# =============================================================================
-
 
 if __name__ == "__main__":
 
