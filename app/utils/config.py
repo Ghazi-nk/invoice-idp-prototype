@@ -5,8 +5,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Benchmark envs
+# llm_utils.py
+SYSTEM_PROMPT_FILE = os.getenv("SYSTEM_PROMPT_FILE")
+USER_PROMPT_FILE = os.getenv("USER_PROMPT_FILE")
+USER_PROMPT_OCR_FILE = os.getenv("USER_PROMPT_OCR_FILE")
 
+
+# Benchmark envs
 LABELS_DIR = os.getenv("LABELS_DIR")
 INVOICES_DIR = os.getenv("INVOICES_DIR")
 

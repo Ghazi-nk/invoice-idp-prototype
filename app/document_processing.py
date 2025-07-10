@@ -8,9 +8,6 @@ five clean, reusable functions:
 3. `clean_ocr_text`                 – normalise & regex‑clean a single string of OCR output
 4. `extract_invoice_fields_from_text` – ask Ollama & parse JSON from a list of page texts
 5. `extract_invoice_fields_from_pdf`  – one‑call end‑to‑end helper (handles page-by-page processing)
-
-The old wrappers (`easyocr_process_pdf`, `tesseract_process_pdf`, …) are kept
-unchanged for backward compatibility.
 """
 
 from __future__ import annotations
@@ -29,6 +26,7 @@ from document_digitalization.ocr import (
 
 from utils.pre_processing import (
     preprocess_plain_text_output,
+    preprocess_doctr_output,
 )
 from utils.config import SAMPLE_PDF_PATH
 from utils.llm_utils import ollama_extract_invoice_fields
@@ -63,7 +61,6 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
         return None
 
 
-# --- Original per‑engine convenience wrappers are now less critical but kept for compatibility ---
 def easyocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, easyocr_png_to_text)
 
@@ -84,14 +81,10 @@ def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
 # --- Five reusable pipeline building blocks ---------------------------------
 # =============================================================================
 
-# 1) PDF -> images
 def pdf_to_images(pdf_path: str) -> List[str]:
     return pdf_to_png_with_pymupdf(pdf_path)
 
 
-# 2) OCR step --- CLEANED UP ---
-# Doctr is now a standard PDF-to-List[str] function.
-# Other engines are image-to-str functions wrapped by process_pdf_with_ocr.
 _OCR_ENGINE_PDF_MAP: Dict[str, Callable[[str], List[str] | None]] = {
     "doctr": doctr_pdf_to_text,
     "easyocr": easyocr_process_pdf,
@@ -110,39 +103,25 @@ def ocr_pdf(pdf_path: str, *, engine: str = "easyocr") -> List[str]:
         valid_options = ", ".join(_OCR_ENGINE_PDF_MAP.keys())
         raise ValueError(f"Unsupported OCR engine '{engine}'. Valid options are: {valid_options}.")
 
-    # All engines now conform to the same interface: pdf_path -> List[str]
     ocr_function = _OCR_ENGINE_PDF_MAP[engine]
     result = ocr_function(pdf_path)
     return result or []
 
 
-# 3) Cleaning / normalisation
 def clean_ocr_text(raw_text: str, *, engine: str) -> str:
     """
-    Wählt den passenden Pre-Processing-Flow basierend auf der Engine.
-    NOTE: The 'doctr' text now contains bbox data. The preprocessor might
-    need adjustment in the future if this data is to be handled specially.
+    Selects the appropriate pre-processing flow based on the engine.
     """
     engine = engine.lower()
-    if engine == "doctr":
-        # The preprocess_doctr_output might need to be reviewed to handle
-        # the new text + bbox format. For now, it's passed through.
-        #return preprocess_doctr_output(raw_text) #todo: fix and use doctr preprocessor
-        return raw_text
-    if engine == "layoutlm":
-        return preprocess_plain_text_output(raw_text)
+    # Engines producing structured JSON data get the doctr preprocessor
+    if engine in {'doctr', 'layoutlm'}:
+        # The `preprocess_doctr_output` is assumed to handle the JSON string format
+        return preprocess_doctr_output(raw_text)
 
-    # Default für Tesseract, EasyOCR, PaddleOCR etc.
+    # Default for plain text engines like Tesseract, EasyOCR, etc.
     return preprocess_plain_text_output(raw_text)
 
 
-# 4) LLM post-processing
-def extract_invoice_fields_from_text(cleaned_pages: List[str]) -> Dict:
-    """Asks the LLM to extract fields from a list of page texts."""
-    return ollama_extract_invoice_fields(cleaned_pages)
-
-
-# 5) End-to-end helper
 def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", clean: bool = True) -> Dict:
     """Full pipeline: PDF ➜ OCR (per page) ➜ clean (per page) ➜ Ollama ➜ dict."""
     # 1. Get raw text for each page
@@ -156,21 +135,27 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", c
             cleaned_page_text = clean_ocr_text(page_text, engine=engine)
             final_text_parts.append(cleaned_page_text)
             print(f"[Info] Seite {i+1} bereinigt.")
-        # Quick log of the cleaned content
         if final_text_parts:
-             print(f"[Info] Gekürzte Vorschau des bereinigten Textes: '{(' '.join(final_text_parts))}...'")
+             print(f"[Info] Gekürzte Vorschau des bereinigten Textes: '{(' '.join(final_text_parts))[:200]}...'")
     else:
         final_text_parts = pages_raw_text
 
-    # 3. Extract fields using the LLM with the list of cleaned page texts
-    return extract_invoice_fields_from_text(final_text_parts)
+    # 3. Determine the data format and extract fields using the LLM
+    # is_ocr = True for plain text engines, False for structured engines
+    is_ocr = False if engine.lower() in {'doctr', 'layoutlm'} else True
+
+    return ollama_extract_invoice_fields(final_text_parts, is_ocr=is_ocr)
+
 
 def get_available_engines() -> List[str]:
     """Returns a list of all supported OCR engine names."""
     return list(_OCR_ENGINE_PDF_MAP.keys())
 
 
-# ... (The __main__ block remains unchanged)
+# =============================================================================
+# --- Main Block for Quick Testing ---
+# =============================================================================
+
 
 if __name__ == "__main__":
 

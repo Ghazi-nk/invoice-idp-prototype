@@ -5,33 +5,30 @@ from typing import List, Dict
 
 import requests
 
-# Assume these are defined in your config file
-from utils.config import CHAT_ENDPOINT, OLLAMA_MODEL
+# --- Configuration for prompt files ---
+from utils.config import (
+    CHAT_ENDPOINT,
+    OLLAMA_MODEL,
+    SYSTEM_PROMPT_FILE,
+    USER_PROMPT_FILE,
+    USER_PROMPT_OCR_FILE
+)
 
-# --- Constants and Setup ---
-BASE_DIR = Path(__file__).resolve().parents[2]
-PROMPT_FILE = BASE_DIR / "resources" / "Prompts" / "prompt.txt"
-PROMPT_TXT = PROMPT_FILE.read_text(encoding="utf-8")
 
-
-def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
+def ollama_extract_invoice_fields(ocr_pages: List[str], is_ocr: bool = True) -> Dict:
     """
-    Extracts invoice fields by sending OCR text to an LLM, page by page, in a single chat session.
-
-    Args:
-        ocr_pages: A list of strings, where each string is the OCR text of one page.
-
-    Returns:
-        A dictionary containing the extracted invoice fields.
+    Extracts invoice fields by sending OCR text to an LLM, using a prompt strategy
+    based on the type of OCR data provided.
     """
-    # 1. Split the master prompt into system instructions and the final user command.
+    # 1. Load the appropriate prompt files based on the engine type
     try:
-        system_prompt, user_command_template = PROMPT_TXT.split("## Nutzer")
-    except ValueError:
-        raise ValueError("Prompt file is missing the '## Nutzer' separator.")
-
-    # The actual command to generate the JSON.
-    final_user_command = user_command_template.split("Hier ist der OCR-Text der neuen Rechnung:")[0].strip()
+        system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
+        if is_ocr:
+            user_prompt = Path(USER_PROMPT_OCR_FILE).read_text(encoding="utf-8")
+        else:
+            user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
+    except FileNotFoundError as e:
+        raise RuntimeError(f"Could not find a required prompt file: {e}")
 
     # 2. Build the initial message list with the system prompt.
     messages = [
@@ -44,12 +41,11 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
 
     num_pages = len(ocr_pages)
     for i, page_text in enumerate(ocr_pages):
-        # Frame each page's text with its page number to give the model clear context.
         message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
         messages.append({"role": "user", "content": message_content})
 
-    # 4. Add the final user command to trigger the JSON generation.
-    messages.append({"role": "user", "content": final_user_command})
+    # 4. Add the final user prompt to trigger the JSON generation.
+    messages.append({"role": "user", "content": user_prompt.strip()})
 
     # 5. Send the complete conversation to the chat endpoint.
     body = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
@@ -73,7 +69,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     if not json_chunk:
         raise ValueError("Could not find a complete JSON object in Ollama response:\n" + raw_content[:500])
 
-    # The regex patch can still be useful as models might add extra braces.
+    # The {{...}} regex patch is no longer the primary method, but can serve as a fallback.
     json_chunk = re.sub(r'^\{\{(.*)\}\}$', r'{\1}', json_chunk, count=1, flags=re.DOTALL)
 
     try:
@@ -84,10 +80,21 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
 
 def _extract_first_complete_json(text: str) -> str | None:
     """
-    (This helper function remains unchanged)
-    Return the first brace-balanced JSON object found in *text*,
-    or None if no complete object exists.
+    Extracts the first complete JSON object from a string.
+    It first tries to find content within <json_output> tags,
+    then falls back to finding the first brace-balanced object.
     """
+    # --- NEW LOGIC: Prioritize finding content within <json_output> tags ---
+    try:
+        # Using regex to find content between the start and end tags, across multiple lines
+        tag_match = re.search(r'<json_output>(.*?)</json_output>', text, re.DOTALL)
+        if tag_match:
+            # If tags are found, we work only with the content inside them
+            text = tag_match.group(1).strip()
+    except re.error:
+        pass  # In case of a regex error, fall back to the old method
+
+    # --- Fallback Logic: Find the first brace-balanced object ---
     start = text.find("{")
     if start == -1:
         return None

@@ -1,0 +1,40 @@
+### Aufgabe
+Extrahiere aus dem folgenden OCR-Rohtext **exakt** die definierten Felder und gib sie als JSON-Objekt zurück.
+
+### Felddefinitionen
+- `invoice_date`: Datum im Format DD.MM.YYYY
+- `vendor_name`: Name des Rechnungsstellers (Verkäufer)
+- `invoice_number`: Die Rechnungs- oder Belegnummer
+- `recipient_name`: Name des Rechnungsempfängers (Käufer)
+- `total_amount`: Der Brutto-Gesamtbetrag als Zahl (z.B. 430.78)
+- `currency`: ISO-Währungscode (z.B. EUR, CHF)
+- `purchase_order_number`: Die Bestell- oder Auftragsnummer, sonst `null`
+- `ust-id`: Die Steuernummer oder USt-IdNr. des Verkäufers
+- `iban`: Die IBAN des Verkäufers
+- `tax_rate`: Der angewendete Umsatzsteuersatz als Zahl (z.B. 19.0)
+
+### Regeln
+1.  **Fehlender Wert**: Wenn ein Wert nicht gefunden wird, setze `null`.
+2.  **Zahlenformat**: Gib Zahlen ohne Anführungszeichen an. Benutze einen **Punkt** als Dezimaltrennzeichen.
+3.  **Datumsformat**: Wandle alle Datumsangaben in das Format **DD.MM.YYYY** um.
+4.  **IBAN**: Suche gezielt nach den Schlüsselwörtern **"IBAN" oder "Konto"**, um die korrekte Nummer zu finden.
+5.  **USt-Id**: Extrahiere die "Steuernummer" oder "USt-IdNr.". Ignoriere die "HRB"-Nummer (Handelsregisternummer).
+
+### Beispiel
+**Input Text:**
+---
+Rechnungs-Nr.: 4711-2024
+Datum: 03.05.2024
+Lieferant: Muster GmbH
+Gesamtbetrag: 1.250,90 EUR
+Bankverbindung: Konto DE12345678901234567800
+---
+**Output JSON:**
+<json_output>
+{"invoice_date":"03.05.2024","vendor_name":"Muster GmbH","invoice_number":"4711-2024","recipient_name":null,"total_amount":1250.90,"currency":"EUR","purchase_order_number":null,"ust-id":null,"iban":"DE12345678901234567800","tax_rate":null}
+</json_output>
+
+### Finale Aufgabe
+Liefere das JSON-Objekt für den folgenden Text **ausschließlich** innerhalb von `<json_output>` Tags.
+
+Hier ist der OCR-Text der neuen Rechnung:
