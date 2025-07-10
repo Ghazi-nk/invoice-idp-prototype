@@ -78,7 +78,7 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", c
     final_text_parts: List[str] = []
     if clean:
         for i, page_text in enumerate(pages_raw_text):
-            cleaned_page_text = preprocess_plain_text_output(page_text, engine=engine)
+            cleaned_page_text = preprocess_plain_text_output(page_text)
             final_text_parts.append(cleaned_page_text)
             print(f"[Info] Seite {i+1} bereinigt.")
         if final_text_parts:
