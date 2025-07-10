@@ -23,6 +23,8 @@ def _preprocess_text_content(txt: str) -> str:
     txt = re.sub(r"(\w+)-\n(\w+)", r"\1\2", txt)
     # Entfernt Seitenzahlanzeiger am Zeilenanfang
     txt = re.sub(r"^\s*page \d+:\s*", "", txt, flags=re.MULTILINE | re.IGNORECASE)
+
+    # print(f"[debug] Preprocessed text: {txt.strip()}")
     return txt.strip()
 
 
@@ -41,6 +43,18 @@ def _format_layoutlm_output(elements: List[Dict[str, Any]]) -> str:
 
 
 # --- ÖFFENTLICHE PRE-PROCESSING FLOWS ------------------------------------------
+
+def preprocess_doctr_output(raw_json_str: str) -> str:
+    """Verarbeitet, formatiert und bereinigt den JSON-Output von Doctr."""
+    try:
+        elements = json.loads(raw_json_str)
+        formatted_text = _format_doctr_output(elements)
+        return _preprocess_text_content(formatted_text)
+    except json.JSONDecodeError:
+        # Falls es kein valides JSON ist, als reinen Text behandeln
+        return _preprocess_text_content(raw_json_str)
+
+
 
 def preprocess_plain_text_output(raw_text: str) -> str:
     """Bereinigt reinen OCR-Text von Engines wie Tesseract, EasyOCR etc."""
