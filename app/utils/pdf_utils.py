@@ -1,11 +1,12 @@
+import base64
+import tempfile
+from contextlib import contextmanager
 from pdf2image import convert_from_path
-
 import os
 import json
 import fitz
 
 from utils.config import TMP_DIR
-
 # turn a pdf with multiple pages into a list of pngs
 def pdf_to_png_multiple(pdf_path: str, dpi: int = 300) -> list[str]:
     pages = convert_from_path(pdf_path, dpi=dpi)
@@ -50,6 +51,38 @@ def extract_text_if_searchable(pdf_path: str) -> str:
 
     # kein Text-Layer
     return ""
+
+
+@contextmanager
+def save_base64_to_temp_pdf(base64_string: str):
+    """
+    Decodes a base64 string and saves it to a temporary PDF file.
+    This function is a context manager to ensure the temporary file is
+    automatically deleted after use.
+
+    Args:
+        base64_string: The base64-encoded content of the PDF.
+
+    Yields:
+        The path to the temporary PDF file.
+    """
+    temp_file_path = None
+    try:
+        # Decode the base64 string to binary data
+        pdf_data = base64.b64decode(base64_string)
+
+        # Create a temporary file with a .pdf extension
+        # 'delete=False' is important because we close it before the 'with' block ends
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+            temp_file.write(pdf_data)
+            temp_file_path = temp_file.name
+
+        yield temp_file_path
+
+    finally:
+        # Ensure the temporary file is deleted after the 'with' block is exited
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
 
 
 def pdf_to_png_with_pymupdf(pdf_path: str, zoom: float = 3.0) -> list[str]:
