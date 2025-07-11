@@ -16,3 +16,4 @@ numpy~=2.2.6
 tqdm~=4.67.1
 openai~=1.93.0
 pydantic~=2.11.7
+fastapi~=0.116.0
