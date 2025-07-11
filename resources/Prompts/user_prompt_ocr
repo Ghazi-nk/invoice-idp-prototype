@@ -7,11 +7,12 @@ definierten Felder und gib sie als JSON-Objekt zurück.
 
 ### Regeln (Kurzfassung)
 1. Fehlende Werte → `null`, keine leeren Strings.
-2. total_amount & tax_rate = Zahl mit **Punkt** als Dezimaltrennzeichen, zwei Nachkommastellen, keine Tausendertrennung.
+2. total_amount & tax_rate = Zahl mit **Punkt**, zwei Nachkommastellen, keine Tausendertrennung.
 3. Nur die zehn Schlüssel in genau dieser Reihenfolge.
 4. IBAN = erste **[A-Z]{2}[0-9A-Z]{13,32}** nach »IBAN« oder »Konto«.
-5. USt-Id = **[A-Z]{2}[0-9]{8,12}** nach »USt-Id«, »USt-IdNr«, »VAT ID«; *Steuernummern ignorieren*.
-6. Ergebnis **ausschließlich** in einer Zeile zwischen `<json_output>`-Tags ausgeben – ohne weiteren Text.
+5. USt-Id muss **mit zwei Buchstaben beginnen** und exakt den EU-Muster-Regexen entsprechen;
+   sonst `null` (Steuernummern ignorieren).
+6. Ergebnis **ausschließlich** in einer Zeile zwischen `<json_output>`-Tags – ohne weiteren Text.
 
 ### OCR-Text
 ```plaintext

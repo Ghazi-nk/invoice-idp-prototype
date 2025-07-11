@@ -1,5 +1,5 @@
 # FILE: document_processing.py
-# SIMPLIFIED
+# UPDATED
 
 from __future__ import annotations
 
@@ -14,9 +14,9 @@ from document_digitalization.ocr import (
     paddleocr_png_to_text,
 )
 
-# --- CHANGE: Removed unused import ---
 from utils.pre_processing import preprocess_plain_text_output
-from utils.post_processing import finalize_extracted_fields
+# --- CHANGE: Import both post-processing functions ---
+from utils.post_processing import finalize_extracted_fields, verify_and_correct_fields
 from utils.config import SAMPLE_PDF_PATH
 from utils.llm_utils import ollama_extract_invoice_fields
 from utils.pdf_utils import pdf_to_png_with_pymupdf
@@ -36,17 +36,22 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
             print(f"[Info] Seite {page_num} von '{base_name}.pdf' erfolgreich verarbeitet.")
         return pages_text
     except Exception as e:
-        print(f"[Error] Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
+        print(
+            f"[Error] Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
         return None
+
 
 def easyocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, easyocr_png_to_text)
 
+
 def tesseract_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, tesseract_png_to_text)
 
+
 def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, paddleocr_png_to_text)
+
 
 def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, layoutlm_image_to_text)
@@ -70,30 +75,42 @@ def ocr_pdf(pdf_path: str, *, engine: str = "easyocr") -> List[str]:
     result = ocr_function(pdf_path)
     return result or []
 
+
+def clean_ocr_text(raw_text: str, *, engine: str) -> str:
+    return preprocess_plain_text_output(raw_text)
+
+
 def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", clean: bool = True) -> Dict:
-    """Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ post-process ➜ final dict."""
+    """Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict."""
     pages_raw_text = ocr_pdf(pdf_path, engine=engine)
-    print(f"[Info] OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_text)} Seiten gefunden.")
+    print(
+        f"[Info] OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_text)} Seiten gefunden.")
 
     final_text_parts: List[str] = []
     if clean:
         for i, page_text in enumerate(pages_raw_text):
-            cleaned_page_text = preprocess_plain_text_output(page_text)
+            cleaned_page_text = clean_ocr_text(page_text, engine=engine)
             final_text_parts.append(cleaned_page_text)
-            print(f"[Info] Seite {i+1} bereinigt.")
+            print(f"[Info] Seite {i + 1} bereinigt.")
         if final_text_parts:
-             print(f"[Info] Gekürzte Vorschau des bereinigten Textes: '{(' '.join(final_text_parts))[:200]}...'")
+            print(f"[Info] Gekürzte Vorschau des bereinigten Textes: '{(' '.join(final_text_parts))[:200]}...'")
     else:
         final_text_parts = pages_raw_text
 
     llm_output = ollama_extract_invoice_fields(final_text_parts)
 
-    final_dict = finalize_extracted_fields(llm_output)
+    # --- NEW: Verify and correct the LLM output using rules ---
+    # We join the text parts to pass the full document text to the verifier
+    full_text_for_verification = "\n".join(final_text_parts)
+    corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
+
+    # --- Final step: Convert numeric strings to number types ---
+    final_dict = finalize_extracted_fields(corrected_dict)
+
     return final_dict
 
 
 def get_available_engines() -> List[str]:
-    """Returns a list of all supported OCR engine names."""
     return list(_OCR_ENGINE_PDF_MAP.keys())
 
 if __name__ == "__main__":
