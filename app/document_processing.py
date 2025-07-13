@@ -1,6 +1,3 @@
-# FILE: document_processing.py
-# UPDATED
-
 from __future__ import annotations
 
 import os
@@ -11,7 +8,7 @@ from document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_text
 from document_digitalization.ocr import (
     easyocr_png_to_text,
     tesseract_png_to_text,
-    paddleocr_png_to_text,
+    paddleocr_pdf_to_text,
 )
 
 from utils.pre_processing import preprocess_plain_text_output
@@ -28,7 +25,7 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
     print(f"\n[Info] Verarbeite '{base_name}.pdf' mit der Engine '{ocr_engine_name}'…")
     pages_text: List[str] = []
     try:
-        png_pages: List[str] = pdf_to_png_with_pymupdf(pdf_path)
+        png_pages: List[str] = pdf_to_png_with_pymupdf(pdf_path) # switch pdf to png converter here!
         for i, png_page in enumerate(png_pages):
             page_num = i + 1
             extracted_text = ocr_function(png_page)
@@ -44,14 +41,8 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
 def easyocr_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, easyocr_png_to_text)
 
-
 def tesseract_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, tesseract_png_to_text)
-
-
-def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
-    return process_pdf_with_ocr(pdf_path, paddleocr_png_to_text)
-
 
 def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
     return process_pdf_with_ocr(pdf_path, layoutlm_image_to_text)
@@ -61,7 +52,7 @@ _OCR_ENGINE_PDF_MAP: Dict[str, Callable[[str], List[str] | None]] = {
     "doctr": doctr_pdf_to_text,
     "easyocr": easyocr_process_pdf,
     "tesseract": tesseract_process_pdf,
-    "paddleocr": paddleocr_process_pdf,
+    "paddleocr": paddleocr_pdf_to_text,
     "layoutlm": layoutlm_process_pdf,
 }
 

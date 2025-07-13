@@ -36,7 +36,7 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
     full_text = "\n".join(texts)
     return json.dumps(full_text, ensure_ascii=False)
 
-def paddleocr_png_to_text(png_path: str, lang: str = 'german') -> str:
+def paddleocr_pdf_to_text(png_path: str, lang: str = 'german') -> str:
     if PaddleOCR is None:
         raise RuntimeError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
 
@@ -55,19 +55,20 @@ def paddleocr_png_to_text(png_path: str, lang: str = 'german') -> str:
 
     full_text = "\n".join(texts)
 
-    return json.dumps(full_text, ensure_ascii=False)
+    return json.dumps(full_text, ensure_ascii=False) #todo: return full_text directly and see benchmark results -> choose best option
+
 
 if __name__ == "__main__":
     # Example usage
-    png_file = "../results/tmp/BMRE-01_page2.png"  # Replace with your image file path
+    png_file = "../results/input/BRE-03.pdf"  # Replace with your image file path
     try:
-        text = tesseract_png_to_text(png_file)
-        print("Tesseract OCR Output:", text)
+        # text = tesseract_png_to_text(png_file)
+        # print("Tesseract OCR Output:", text)
 
-        easyocr_text = easyocr_png_to_text(png_file)
-        print("EasyOCR Output:", easyocr_text)
+        # easyocr_text = easyocr_png_to_text(png_file)
+        # print("EasyOCR Output:", easyocr_text)
 
-        paddleocr_text = paddleocr_png_to_text(png_file)
+        paddleocr_text = paddleocr_pdf_to_text(png_file)
         print("PaddleOCR Output:", paddleocr_text)
 
     except RuntimeError as e:
