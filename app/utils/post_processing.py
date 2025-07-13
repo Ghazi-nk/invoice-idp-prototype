@@ -1,5 +1,3 @@
-# FILE: utils/post_processing.py
-
 import re
 from typing import Dict, Any, List
 
@@ -22,7 +20,7 @@ UST_ID_PATTERNS = [
 IBAN_PATTERN = re.compile(r'\b([A-Z]{2}[0-9]{2}[A-Z0-9]{11,30})\b', re.IGNORECASE)
 
 
-def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str, Any]:
+def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str, Any]: # todo: not working properly!
     """
     Acts as a "safety net" to verify and correct fields with strong patterns
     if the LLM failed to extract them.
