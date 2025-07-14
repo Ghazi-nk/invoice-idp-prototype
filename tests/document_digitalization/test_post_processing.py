@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, call
 
 # Der zu testende Code
-from utils import post_processing
+from post_processing import post_processing
 
 
 class TestVerifyAndCorrectFields(unittest.TestCase):

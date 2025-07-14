@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# llm_utils.py
+# semantic_extraction.py
 SYSTEM_PROMPT_FILE = os.getenv("SYSTEM_PROMPT_FILE")
 USER_PROMPT_FILE = os.getenv("USER_PROMPT_FILE")
 USER_PROMPT_OCR_FILE = os.getenv("USER_PROMPT_OCR_FILE")

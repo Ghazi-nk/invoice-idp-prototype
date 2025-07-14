@@ -8,7 +8,7 @@ import os
 import json
 import fitz
 
-from utils.config import TMP_DIR
+from config import TMP_DIR
 
 @contextmanager
 def save_base64_to_temp_pdf(base64_string: str):

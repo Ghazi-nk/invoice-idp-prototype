@@ -2,15 +2,12 @@
 # UPDATED to output plain text
 
 import os
-import json
 import re
 from typing import List, Dict
 
 import numpy as np
 from PIL import Image
 from transformers import LayoutLMv3Processor, LayoutLMv3ForQuestionAnswering
-
-from utils.config import TMP_DIR, SAMPLE_PNG_PATH
 
 _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-large")
 _MODEL = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-large")

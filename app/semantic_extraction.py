@@ -6,7 +6,7 @@ from typing import List, Dict
 import requests
 
 # --- Configuration for prompt files ---
-from utils.config import (
+from config import (
     CHAT_ENDPOINT,
     OLLAMA_MODEL,
     SYSTEM_PROMPT_FILE,
