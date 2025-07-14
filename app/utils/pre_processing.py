@@ -1,9 +1,4 @@
-# FILE: utils/pre_processing.py
-# SIMPLIFIED
-
 import re
-
-# --- PRIVATE HELPER ---
 
 def _preprocess_text_content(txt: str) -> str:
     """Cleans a single text block of typical OCR errors."""
@@ -22,9 +17,6 @@ def _preprocess_text_content(txt: str) -> str:
     # Removes page number indicators from the start of lines
     txt = re.sub(r"^\s*page \d+:\s*", "", txt, flags=re.MULTILINE | re.IGNORECASE)
     return txt.strip()
-
-
-# --- PUBLIC PRE-PROCESSING FLOW ---
 
 def preprocess_plain_text_output(raw_text: str) -> str:
     """Cleans plain OCR text from engines like Tesseract, Doctr, etc."""
