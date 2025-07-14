@@ -1,7 +1,7 @@
 import unittest
 
 # The code to be tested
-from utils import pre_processing
+from document_digitalization import pre_processing
 
 
 class TestPreProcessing(unittest.TestCase):

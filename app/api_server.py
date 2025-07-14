@@ -1,7 +1,6 @@
 # FILE: app/api_server.py
 
 import os
-import tempfile
 import base64
 from typing import Optional, List
 
@@ -15,7 +14,7 @@ from document_processing import (
     get_available_engines,
     ocr_pdf
 )
-from utils.pdf_utils import pdf_to_png_with_pymupdf,save_base64_to_temp_pdf, encode_image_to_base64
+from document_digitalization.pdf_utils import pdf_to_png_with_pymupdf,save_base64_to_temp_pdf, encode_image_to_base64
 
 # --- API Setup ---
 app = FastAPI(

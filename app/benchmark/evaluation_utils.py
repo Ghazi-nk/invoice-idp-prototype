@@ -2,7 +2,7 @@ import re
 import unicodedata
 from typing import Dict
 
-from utils.post_processing import canon_money
+from post_processing import canon_money
 
 
 def canon_text(s: str | None) -> str:

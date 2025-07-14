@@ -10,7 +10,7 @@ from typing import List
 
 from paddleocr import PaddleOCR
 
-from utils.config import TMP_DIR, TESSERACT_CMD
+from config import TMP_DIR, TESSERACT_CMD
 
 def tesseract_png_to_text(png_path: str) -> str:
     base = os.path.splitext(os.path.basename(png_path))[0]

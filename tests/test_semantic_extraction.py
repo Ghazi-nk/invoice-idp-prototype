@@ -1,11 +1,9 @@
-
-import json
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 
 # Der zu testende Code
-# Annahme: Der Code befindet sich in einer Datei namens llm_utils.py
-import utils.llm_utils as llm_utils
+# Annahme: Der Code befindet sich in einer Datei namens semantic_extraction.py
+import semantic_extraction as llm_utils
 
 
 class TestExtractFirstCompleteJson(unittest.TestCase):

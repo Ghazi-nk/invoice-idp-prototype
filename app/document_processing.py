@@ -11,12 +11,12 @@ from document_digitalization.ocr import (
     paddleocr_pdf_to_text,
 )
 
-from utils.pre_processing import preprocess_plain_text_output
-# --- CHANGE: Import both post-processing functions ---
-from utils.post_processing import finalize_extracted_fields, verify_and_correct_fields
-from utils.config import SAMPLE_PDF_PATH
-from utils.llm_utils import ollama_extract_invoice_fields
-from utils.pdf_utils import pdf_to_png_with_pymupdf
+from document_digitalization.pre_processing import preprocess_plain_text_output
+
+from post_processing import finalize_extracted_fields, verify_and_correct_fields
+from config import SAMPLE_PDF_PATH
+from semantic_extraction import ollama_extract_invoice_fields
+from document_digitalization.pdf_utils import pdf_to_png_with_pymupdf
 
 
 def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> List[str] | None:
@@ -57,7 +57,7 @@ _OCR_ENGINE_PDF_MAP: Dict[str, Callable[[str], List[str] | None]] = {
 }
 
 
-def ocr_pdf(pdf_path: str, *, engine: str = "easyocr") -> List[str]:
+def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr") -> List[str]:
     engine = engine.lower()
     if engine not in _OCR_ENGINE_PDF_MAP:
         valid_options = ", ".join(_OCR_ENGINE_PDF_MAP.keys())
@@ -71,7 +71,7 @@ def clean_ocr_text(raw_text: str, *, engine: str) -> str:
     return preprocess_plain_text_output(raw_text)
 
 
-def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", clean: bool = True) -> Dict:
+def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", clean: bool = True) -> Dict:
     """Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict."""
     pages_raw_text = ocr_pdf(pdf_path, engine=engine)
     print(
@@ -90,12 +90,9 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "easyocr", c
 
     llm_output = ollama_extract_invoice_fields(final_text_parts)
 
-    # --- NEW: Verify and correct the LLM output using rules ---
-    # We join the text parts to pass the full document text to the verifier
     full_text_for_verification = "\n".join(final_text_parts)
     corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
 
-    # --- Final step: Convert numeric strings to number types ---
     final_dict = finalize_extracted_fields(corrected_dict)
 
     return final_dict
