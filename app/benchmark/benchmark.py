@@ -10,7 +10,7 @@ import statistics
 
 from document_processing import extract_invoice_fields_from_pdf, get_available_engines
 
-from evaluation_utils import is_match, check_acceptance
+from app.benchmark.evaluation_utils import is_match, check_acceptance
 
 # --- Configuration for benchmark ---
 from utils.config import (
