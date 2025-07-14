@@ -7,11 +7,10 @@ import multiprocessing
 import collections
 import statistics
 
-# --- Main pipeline functions ---
+
 from document_processing import extract_invoice_fields_from_pdf, get_available_engines
 
-# --- NEW: Import all evaluation helpers from the central utility file ---
-from utils.evaluation_utils import is_match, check_acceptance
+from evaluation_utils import is_match, check_acceptance
 
 # --- Configuration for benchmark ---
 from utils.config import (

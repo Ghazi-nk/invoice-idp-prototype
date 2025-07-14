@@ -2,18 +2,7 @@
 import re
 from typing import Dict, Any, List
 
-# This is a dummy setup for the function to be available.
-# In your project, you'd use your actual import.
-try:
-    from utils.evaluation_utils import canon_money
-except ImportError:
-    def canon_money(value):
-        if isinstance(value, (int, float)): return float(value)
-        try:
-            found = re.search(r'[-+]?\d*[\.,]?\d+', str(value).replace(',', '.'))
-            return float(found.group(0)) if found else 0.0
-        except (ValueError, AttributeError):
-            return 0.0
+
 
 # =============================================================================
 # --- Rule-Based Verification and Correction ---
@@ -57,9 +46,16 @@ def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str,
 
     return data
 
-# =============================================================================
-# --- Final Data Type Conversion ---
-# =============================================================================
+def canon_money(x: str | float | None) -> float | None:
+    """Canonicalize a money value to a float."""
+    if x in (None, "", "null"): return None
+    if isinstance(x, (int, float)): return round(float(x), 2)
+    x = str(x).replace("'", "").replace(" ", "").replace("€", "").replace(",", ".")
+    try:
+        return round(float(x), 2)
+    except ValueError:
+        return None
+
 
 def finalize_extracted_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     """
