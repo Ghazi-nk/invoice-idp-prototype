@@ -2,6 +2,8 @@ import re
 import unicodedata
 from typing import Dict
 
+from utils.post_processing import canon_money
+
 
 def canon_text(s: str | None) -> str:
     """
@@ -39,19 +41,7 @@ def is_name_match(expected: str | None, predicted: str | None) -> bool:
     # Check if the set of predicted words is a subset of the expected words
     return canon_predicted.issubset(canon_expected)
 
-
-def canon_money(x: str | float | None) -> float | None:
-    """Canonicalize a money value to a float."""
-    if x in (None, "", "null"): return None
-    if isinstance(x, (int, float)): return round(float(x), 2)
-    x = str(x).replace("'", "").replace(" ", "").replace("€", "").replace(",", ".")
-    try:
-        return round(float(x), 2)
-    except ValueError:
-        return None
-
-
-def canon_id(s: str | None) -> str:
+def _canon_id(s: str | None) -> str:
     """Canonicalize an ID string."""
     if not s: return ""
     return re.sub(r"[^A-Z0-9]", "", str(s).upper())
@@ -70,7 +60,7 @@ def is_match(field: str, true_val, pred_val) -> bool:
         return is_name_match(true_val, pred_val)
 
     if field in MONEY_KEYS: return canon_money(true_val) == canon_money(pred_val)
-    if field in ID_KEYS: return canon_id(true_val) == canon_id(pred_val)
+    if field in ID_KEYS: return _canon_id(true_val) == _canon_id(pred_val)
     return canon_text(true_val) == canon_text(pred_val)
 
 
