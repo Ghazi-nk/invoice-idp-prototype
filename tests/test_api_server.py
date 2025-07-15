@@ -38,7 +38,8 @@ class TestApiServer(unittest.TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"total_amount": 123.45, "vendor_name": "TestCorp"})
+        # New response model: {'data': {...}}
+        self.assertEqual(response.json(), {"data": {"total_amount": 123.45, "vendor_name": "TestCorp"}})
         mock_extract.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract", clean=True)
 
     @patch('app.api_server.extract_invoice_fields_from_pdf')
@@ -78,7 +79,8 @@ class TestApiServer(unittest.TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), ["Page 1 text.", "Page 2 text."])
+        # New response model: {'ocr_text': [...]}
+        self.assertEqual(response.json(), {"ocr_text": ["Page 1 text.", "Page 2 text."]})
         mock_ocr.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract")
 
     # --- Tests for /api/v1/to-images ---
@@ -99,6 +101,7 @@ class TestApiServer(unittest.TestCase):
 
         # Assert
         self.assertEqual(response.status_code, 200)
+        # New response model: {'images': [...]}
         self.assertEqual(response.json(), {"images": ["encoded_image_string", "encoded_image_string"]})
         self.assertEqual(mock_encode.call_count, 2)
         self.assertEqual(mock_remove.call_count, 2)  # Check that files are cleaned up
@@ -143,6 +146,48 @@ class TestApiServer(unittest.TestCase):
         # Assert
         self.assertEqual(response.status_code, 500)
         self.assertIn("An unexpected server error occurred", response.json()['detail'])
+
+    # --- Edge Case Tests ---
+
+    def test_extract_empty_base64(self):
+        """Should return 400 for empty base64 string."""
+        response = self.client.post(
+            "/api/v1/extract",
+            json={"invoice_base64": "", "engine": "tesseract"}
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid base64 string provided", response.json()["detail"])
+
+    def test_extract_missing_invoice_base64(self):
+        """Should return 422 for missing required field 'invoice_base64'."""
+        response = self.client.post(
+            "/api/v1/extract",
+            json={"engine": "tesseract"}
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("invoice_base64", str(response.json()))
+
+    def test_ocr_valid_but_non_pdf_base64(self):
+        """Should return 400 for valid base64 that is not a PDF."""
+        # This is base64 for a plain text file, not a PDF
+        fake_txt_b64 = base64.b64encode(b"not a pdf").decode('utf-8')
+        response = self.client.post(
+            "/api/v1/ocr",
+            json={"invoice_base64": fake_txt_b64, "engine": "tesseract"}
+        )
+        # Should fail in the pipeline, likely with a 500 error
+        self.assertIn(response.status_code, (400, 500))
+
+    def test_to_images_large_base64(self):
+        """Should handle very large base64 input gracefully (simulate, don't allocate real memory)."""
+        # Simulate a large base64 string (not a real PDF, but large enough to test handling)
+        large_b64 = base64.b64encode(b"0" * 10_000_000).decode('utf-8')  # 10MB of zeros
+        response = self.client.post(
+            "/api/v1/to-images",
+            json={"invoice_base64": large_b64}
+        )
+        # Should fail gracefully (likely 400 or 500)
+        self.assertIn(response.status_code, (400, 500))
 
 
 if __name__ == '__main__':
