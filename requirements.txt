@@ -1,7 +1,7 @@
 pdf2image~=1.17.0
 Pillow~=11.2.1
 torch~=2.7.1
-transformers>=4.30
+transformers==4.36.2
 sentencepiece
 protobuf
 dotenv~=0.9.9
@@ -17,3 +17,5 @@ tqdm~=4.67.1
 openai~=1.93.0
 pydantic~=2.11.7
 fastapi~=0.116.0
+tokenizers>=0.14,<0.19
+PyMuPDF
