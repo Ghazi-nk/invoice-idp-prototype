@@ -6,13 +6,23 @@ from typing import List, Dict, Any
 
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
+import logging
+
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("doctr_pdf2txt")
 
 
 def _run_ocr(pdf_path: str) -> Dict[str, Any]:
-    """Run Doctr OCR on ``pdf_path`` and return the raw result object."""
-    predictor = ocr_predictor(pretrained=True)
-    document = DocumentFile.from_pdf(pdf_path)
-    return predictor(document)
+    """Run Doctr OCR on ``pdf_path`` and return the raw result object. Logs errors if OCR fails."""
+    try:
+        predictor = ocr_predictor(pretrained=True)
+        document = DocumentFile.from_pdf(pdf_path)
+        return predictor(document)
+    except Exception as e:
+        logger.exception(f"Doctr OCR failed for '{pdf_path}':")
+        raise
 
 
 def _extract_and_group_lines_by_page(result: Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]:
@@ -76,19 +86,23 @@ def _merge_lines_on_page(lines: List[Dict[str, Any]], y_tolerance: int = 10) -> 
 
 def doctr_pdf_to_text(pdf_path: str) -> List[str]:
     """
-    Runs Doctr OCR, merges fragmented lines, and returns the plain text for each page.
+    Runs Doctr OCR, merges fragmented lines, and returns the plain text for each page. Logs errors if processing fails.
     """
-    result = _run_ocr(pdf_path)
-    pages_with_lines = _extract_and_group_lines_by_page(result)
-    final_page_strings: List[str] = []
+    try:
+        result = _run_ocr(pdf_path)
+        pages_with_lines = _extract_and_group_lines_by_page(result)
+        final_page_strings: List[str] = []
 
-    sorted_page_numbers = sorted(pages_with_lines.keys())
-    for page_num in sorted_page_numbers:
-        raw_lines = pages_with_lines[page_num]
-        merged_page_lines = _merge_lines_on_page(raw_lines)
+        sorted_page_numbers = sorted(pages_with_lines.keys())
+        for page_num in sorted_page_numbers:
+            raw_lines = pages_with_lines[page_num]
+            merged_page_lines = _merge_lines_on_page(raw_lines)
 
-        # --- CHANGE: Convert to plain text instead of JSON ---
-        plain_text = "\n".join([line['text'] for line in merged_page_lines])
-        final_page_strings.append(plain_text)
+            # --- CHANGE: Convert to plain text instead of JSON ---
+            plain_text = "\n".join([line['text'] for line in merged_page_lines])
+            final_page_strings.append(plain_text)
 
-    return final_page_strings
+        return final_page_strings
+    except Exception as e:
+        logger.exception(f"doctr_pdf_to_text failed for '{pdf_path}':")
+        raise
