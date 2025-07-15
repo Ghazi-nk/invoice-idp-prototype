@@ -8,33 +8,45 @@ from typing import List, Dict
 import numpy as np
 from PIL import Image
 from transformers import LayoutLMv3Processor, LayoutLMv3ForQuestionAnswering
+import logging
 
 _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-large")
 _MODEL = LayoutLMv3ForQuestionAnswering.from_pretrained("microsoft/layoutlmv3-large")
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("layoutlmv3_png2txt")
 
 
 def layoutlm_image_to_text(image_path: str) -> str:
     """
     Extracts text chunks from an image using LayoutLMv3 and returns
     a single plain-text string.
+    Logs errors if processing fails.
     """
-    image = _load_image(image_path)
-    inputs = _PROCESSOR(images=image, return_tensors="pt", truncation=True, max_length=512)
-    _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")})
+    try:
+        image = _load_image(image_path)
+        inputs = _PROCESSOR(images=image, return_tensors="pt", truncation=True, max_length=512)
+        _MODEL(**{k: inputs[k] for k in ("input_ids", "attention_mask", "bbox", "pixel_values")})
 
-    tokens = _flatten_tokens(inputs)
-    sorted_lines = _bucket_tokens_by_line(tokens)
-    thresh = _compute_dynamic_threshold(sorted_lines)
-    chunks = _chunk_all_lines(sorted_lines, thresh)
-    chunk_objs = _make_chunk_objects(chunks)
+        tokens = _flatten_tokens(inputs)
+        sorted_lines = _bucket_tokens_by_line(tokens)
+        thresh = _compute_dynamic_threshold(sorted_lines)
+        chunks = _chunk_all_lines(sorted_lines, thresh)
+        chunk_objs = _make_chunk_objects(chunks)
 
-    # --- CHANGE: Convert to plain text instead of JSON ---
-    plain_text = "\n".join([obj['text'] for obj in chunk_objs])
-    return plain_text
+        # --- CHANGE: Convert to plain text instead of JSON ---
+        plain_text = "\n".join([obj['text'] for obj in chunk_objs])
+        return plain_text
+    except Exception as e:
+        logger.exception(f"layoutlm_image_to_text failed for '{image_path}':")
+        raise
 
 
 def _load_image(path: str) -> Image.Image:
+    """Loads an image from the given path. Logs and raises FileNotFoundError if not found."""
     if not os.path.isfile(path):
+        logger.error(f"No such file: {path}")
         raise FileNotFoundError(f"No such file: {path}")
     return Image.open(path).convert("RGB")
 
