@@ -14,7 +14,8 @@ from app.document_processing import (
     get_available_engines,
     ocr_pdf
 )
-from app.document_digitalization.pdf_utils import pdf_to_png_with_pymupdf, save_base64_to_temp_pdf, encode_image_to_base64
+from app.document_digitalization.pdf_utils import pdf_to_png_with_pymupdf, save_base64_to_temp_pdf, encode_image_to_base64, extract_text_if_searchable
+from app.semantic_extraction import ollama_extract_invoice_fields
 
 import logging
 
@@ -84,6 +85,19 @@ class InvoiceExtractionResponse(BaseModel):
                 "tax_rate": 19.0
             }
         }
+
+
+class SearchableTextRequest(BaseModel):
+    invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+
+class SearchableTextResponse(BaseModel):
+    text: str = Field(..., description="All extracted searchable text from the PDF.")
+
+class LLMExtractRequest(BaseModel):
+    ocr_pages: List[str] = Field(..., description="List of OCR text per page.")
+
+class LLMExtractResponse(BaseModel):
+    fields: dict = Field(..., description="Extracted invoice fields from LLM.")
 
 
 # =============================================================================
@@ -162,42 +176,42 @@ def get_ocr_text(request: InvoiceRequest) -> OCRTextResponse:
         return OCRTextResponse(ocr_text=[])
 
 
-@app.post("/api/v1/to-images", summary="Convert PDF to Images (Base64)", response_model=ImagesResponse)
-def pdf_to_images_base64(request: PDFRequest) -> ImagesResponse:
+@app.get("/api/v1/ocr-engines", summary="List Available OCR Engines")
+def get_ocr_engines() -> List[str]:
     """
-    Receives a base64-encoded PDF and returns a list of base64-encoded PNG images for each page.
+    Returns a list of available OCR engines.
+    """
+    return get_available_engines()
 
+@app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=SearchableTextResponse)
+def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextResponse:
+    """
+    Extracts all searchable text from a PDF (no OCR). Returns as a single string.
     """
     try:
         with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
-
-            image_paths = pdf_to_png_with_pymupdf(temp_pdf_path)
-            encoded_images = []
-            for img_path in image_paths:
-                encoded_images.append(encode_image_to_base64(img_path))
-                if os.path.exists(img_path):
-                    os.remove(img_path)
-
-            return ImagesResponse(images=encoded_images)
+            text_json = extract_text_if_searchable(temp_pdf_path)
+            # text_json is a JSON string, so parse it
+            import json
+            text = json.loads(text_json) if text_json else ""
+            return SearchableTextResponse(text=text)
     except Exception as e:
         handle_error(e)
-        return ImagesResponse(images=[])
+        return SearchableTextResponse(text="")
 
-
-@app.post("/api/v1/to-pdf", summary="Convert Base64 to PDF File")
-def base64_to_pdf_file(request: PDFRequest):
+@app.post("/api/v1/llm-extract", summary="LLM-based Field Extraction", response_model=LLMExtractResponse)
+def llm_extract(request: LLMExtractRequest) -> LLMExtractResponse:
     """
-    Receives a base64-encoded string and returns it as a downloadable PDF file.
+    Runs LLM-based field extraction on provided OCR text pages. Returns extracted invoice fields.
     """
     try:
-        pdf_data = base64.b64decode(request.invoice_base64)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
-
-    return Response(content=pdf_data, media_type="application/pdf",
-                    headers={"Content-Disposition": "attachment; filename=invoice.pdf"})
+        fields = ollama_extract_invoice_fields(request.ocr_pages)
+        return LLMExtractResponse(fields=fields)
+    except Exception as e:
+        handle_error(e)
+        return LLMExtractResponse(fields={})
 
 
 def handle_error(e: Exception):
