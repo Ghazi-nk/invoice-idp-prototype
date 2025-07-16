@@ -6,24 +6,41 @@ from pathlib import Path
 import multiprocessing
 import collections
 import statistics
+import sys
 
 
-from document_processing import extract_invoice_fields_from_pdf, get_available_engines
+from app.document_processing import extract_invoice_fields_from_pdf, get_available_engines
+from app.document_digitalization.pdf_utils import extract_text_if_searchable
+from app.semantic_extraction import ollama_extract_invoice_fields
+from app.document_digitalization.pre_processing import preprocess_plain_text_output
+from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
 from app.benchmark.evaluation_utils import is_match, check_acceptance
 
 # --- Configuration for benchmark ---
-from config import (
+from app.config import (
     INVOICES_DIR,
     LABELS_DIR,
     OLLAMA_MODEL
 )
 
+# --- Ensure required config variables are set ---
+if INVOICES_DIR is None:
+    print("Error: INVOICES_DIR is not set.", file=sys.stderr)
+    sys.exit(1)
+if LABELS_DIR is None:
+    print("Error: LABELS_DIR is not set.", file=sys.stderr)
+    sys.exit(1)
+if OLLAMA_MODEL is None:
+    print("Error: OLLAMA_MODEL is not set.", file=sys.stderr)
+    sys.exit(1)
+
 NUM_WORKERS = 2
 MODEL_SAFE = OLLAMA_MODEL.replace(":", "_")
-OUTPUT_SUMMARY_CSV = f"summary_{MODEL_SAFE}.csv"
-OUTPUT_DETAIL_CSV = f"details_{MODEL_SAFE}.csv"
-OUTPUT_RESULTS_CSV = f"results_{MODEL_SAFE}.csv"
+BENCHMARK_DIR = Path(__file__).parent
+OUTPUT_SUMMARY_CSV = str(BENCHMARK_DIR / f"summary_{MODEL_SAFE}.csv")
+OUTPUT_DETAIL_CSV = str(BENCHMARK_DIR / f"details_{MODEL_SAFE}.csv")
+OUTPUT_RESULTS_CSV = str(BENCHMARK_DIR / f"results_{MODEL_SAFE}.csv")
 
 
 def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
@@ -34,26 +51,34 @@ def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
     return round(precision, 3), round(recall, 3), round(f1, 3)
 
 
-def process_task(task_args: tuple) -> dict | None:
-    """Processes a single (pdf_path, engine, label_path) task."""
+def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
+    """Processes a single (pdf_path, engine, label_path) task, with searchable flag."""
     pdf_path, engine, label_path = task_args
     base_name = pdf_path.stem
 
-    print(f"  Processing '{base_name}.pdf' with '{engine}'...")
+    print(f"  Processing '{base_name}.pdf' with '{engine}' (searchable={is_searchable})...")
     try:
         start_time = time.perf_counter()
         with open(label_path, encoding="utf-8") as f:
             gt = json.load(f)
 
-        pred = extract_invoice_fields_from_pdf(
-            pdf_path=str(pdf_path),
-            engine=engine,
-            clean=True
-        )
+        if engine == "searchable":
+            page_texts = extract_text_if_searchable(str(pdf_path))
+            # Clean text if needed
+            final_text_parts = [preprocess_plain_text_output(page) for page in page_texts]
+            llm_output = ollama_extract_invoice_fields(final_text_parts)
+            full_text_for_verification = "\n".join(final_text_parts)
+            pred = finalize_extracted_fields(verify_and_correct_fields(llm_output, full_text_for_verification))
+        else:
+            pred = extract_invoice_fields_from_pdf(
+                pdf_path=str(pdf_path),
+                engine=engine,
+                clean=True
+            )
         duration = round(time.perf_counter() - start_time, 3)
 
         fields = list(gt.keys())
-        summary_row = {"invoice": base_name, "pipeline": engine, "duration": duration}
+        summary_row = {"invoice": base_name, "pipeline": engine, "duration": duration, "searchable": is_searchable}
         detail_rows = []
         correct = tp = fp = fn = 0
 
@@ -71,7 +96,7 @@ def process_task(task_args: tuple) -> dict | None:
 
             detail_rows.append({
                 "invoice": base_name, "pipeline": engine, "field": fld,
-                "expected": gt.get(fld), "predicted": pred.get(fld), "match": int(match)
+                "expected": gt.get(fld), "predicted": pred.get(fld), "match": int(match), "searchable": is_searchable
             })
 
         summary_row["accuracy"] = round(correct / len(fields), 3)
@@ -87,6 +112,10 @@ def process_task(task_args: tuple) -> dict | None:
     except Exception as e:
         print(f"  ✗ ERROR processing '{base_name}.pdf' with '{engine}': {e}")
         return None
+
+
+def process_task_with_args(args):
+    return process_task(*args)
 
 
 def generate_final_results():
@@ -141,16 +170,29 @@ def main():
     tasks_to_do = []
     all_pdfs = sorted(Path(INVOICES_DIR).glob("*.pdf"))
     all_engines = get_available_engines()
+    all_engines_with_searchable = all_engines + ["searchable"]
 
+    pdf_searchable_map = {}
     for pdf_path in all_pdfs:
         base_name = pdf_path.stem
         label_path = Path(LABELS_DIR) / f"{base_name}.json"
         if not label_path.exists():
             print(f"  ! Warning: No label file for '{base_name}.pdf'. Skipping.")
             continue
+        # Determine if PDF is searchable
+        try:
+            text_pages = extract_text_if_searchable(str(pdf_path))
+            is_searchable = any(page.strip() for page in text_pages)
+        except Exception as e:
+            print(f"  ! Error checking if '{base_name}.pdf' is searchable: {e}")
+            is_searchable = False
+        pdf_searchable_map[base_name] = is_searchable
         for engine in all_engines:
             if (base_name, engine) not in completed_work:
-                tasks_to_do.append((pdf_path, engine, label_path))
+                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable))
+        # Only add 'searchable' engine if PDF is searchable
+        if is_searchable and (base_name, "searchable") not in completed_work:
+            tasks_to_do.append(((pdf_path, "searchable", label_path), True))
 
     if not tasks_to_do:
         print("✓ No new tasks to process. Benchmark is up-to-date.")
@@ -166,10 +208,9 @@ def main():
             with open(first_label_path, encoding="utf-8") as fh:
                 fields = list(json.load(fh).keys())
 
-            # --- NEW: Add 'acceptance' to the summary header ---
-            header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", "recall", "f1", "acceptance",
-                              "duration"]
-            header_details = ["invoice", "pipeline", "field", "expected", "predicted", "match"]
+            # --- Add 'searchable' to the summary header ---
+            header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", "recall", "f1", "acceptance", "duration", "searchable"]
+            header_details = ["invoice", "pipeline", "field", "expected", "predicted", "match", "searchable"]
 
             summary_writer = csv.DictWriter(sum_f, fieldnames=header_summary)
             detail_writer = csv.DictWriter(det_f, fieldnames=header_details)
@@ -180,7 +221,7 @@ def main():
             if NUM_WORKERS > 1:
                 print(f"\n▶ Running in PARALLEL mode with {NUM_WORKERS} workers...")
                 with multiprocessing.Pool(processes=NUM_WORKERS) as pool:
-                    for result in pool.imap_unordered(process_task, tasks_to_do):
+                    for result in pool.imap_unordered(process_task_with_args, tasks_to_do):
                         if result:
                             summary_writer.writerow(result["summary"])
                             detail_writer.writerows(result["details"])
@@ -188,11 +229,11 @@ def main():
                 print("\n▶ Running in SEQUENTIAL mode (invoice-centric)...")
                 tasks_by_pdf = collections.defaultdict(list)
                 for task in tasks_to_do:
-                    tasks_by_pdf[task[0]].append(task)
+                    tasks_by_pdf[task[0][0]].append(task)
                 for pdf_path, pdf_tasks in sorted(tasks_by_pdf.items()):
                     print(f"\n-- Processing PDF: {pdf_path.name} --")
                     for task in pdf_tasks:
-                        result = process_task(task)
+                        result = process_task(*task)
                         if result:
                             summary_writer.writerow(result["summary"])
                             detail_writer.writerows(result["details"])

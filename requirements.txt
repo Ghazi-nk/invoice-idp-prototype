@@ -1,6 +1,6 @@
-pdf2image~=1.17.0
+#pdf2image~=1.17.0
 Pillow~=11.2.1
-torch~=2.7.1
+torch==2.2.2
 transformers==4.36.2
 sentencepiece
 protobuf
@@ -11,11 +11,17 @@ pathlib~=1.0.1
 fitz~=0.0.1.dev2
 easyocr~=1.7.2
 paddleocr~=3.1.0
-doctr~=1.9.0
+# --- PyTorch and vision/audio dependencies (must match for doctr) ---
+torch==2.2.2
+torchvision==0.17.2
+torchaudio==2.2.2
+
+doctr[torch]~=1.9.0
 numpy~=2.2.6
 tqdm~=4.67.1
-openai~=1.93.0
 pydantic~=2.11.7
 fastapi~=0.116.0
 tokenizers>=0.14,<0.19
 PyMuPDF
+paddlepaddle
+pytesseract
