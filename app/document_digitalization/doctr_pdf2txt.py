@@ -1,8 +1,6 @@
-# FILE: document_digitalization/doctr_pdf2txt.py
-# UPDATED to output plain text
-
 import json
 from typing import List, Dict, Any
+import re
 
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
@@ -86,7 +84,9 @@ def _merge_lines_on_page(lines: List[Dict[str, Any]], y_tolerance: int = 10) -> 
 
 def doctr_pdf_to_text(pdf_path: str) -> List[str]:
     """
-    Runs Doctr OCR, merges fragmented lines, and returns the plain text for each page. Logs errors if processing fails.
+    Runs Doctr OCR, merges fragmented lines, and returns the plain-text page strings
+    – jetzt aber mit y-Koordinate pro Zeile, geeignet als LLM-Prompt-Eingabe.
+    Beispielzeile: [y=328] "Rechnung: Re-2/2015"
     """
     try:
         result = _run_ocr(pdf_path)
@@ -98,11 +98,18 @@ def doctr_pdf_to_text(pdf_path: str) -> List[str]:
             raw_lines = pages_with_lines[page_num]
             merged_page_lines = _merge_lines_on_page(raw_lines)
 
-            # --- CHANGE: Convert to plain text instead of JSON ---
-            plain_text = "\n".join([line['text'] for line in merged_page_lines])
+            # --- NEU: Zeilen ins Prompt-Format bringen -----------------------
+            page_lines_for_prompt = []
+            for ln in merged_page_lines:
+                x0, y0, x1, y1 = ln["bbox"]
+                y_center = int((y0 + y1) / 2)
+                page_lines_for_prompt.append(f'[y={y_center}] "{ln["text"]}"')
+            # -----------------------------------------------------------------
+
+            plain_text = "\n".join(page_lines_for_prompt)
             final_page_strings.append(plain_text)
 
         return final_page_strings
-    except Exception as e:
+    except Exception:
         logger.exception(f"doctr_pdf_to_text failed for '{pdf_path}':")
         raise
