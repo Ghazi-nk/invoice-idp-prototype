@@ -65,9 +65,7 @@ def doctr_process_pdf(pdf_path: str) -> List[str] | None:
 def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
     try:
         # paddleocr_pdf_to_text expects a PNG path, but our pipeline expects a PDF path
-        # If needed, convert PDF to PNGs and process each page, but for now, assume it works per page
-        # Here, we assume pdf_to_png_with_pymupdf is used in process_pdf_with_ocr
-        return process_pdf_with_ocr(pdf_path, lambda png: paddleocr_pdf_to_text(png))
+        return paddleocr_pdf_to_text(pdf_path)
     except Exception as e:
         logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}':")
         return None
@@ -113,6 +111,11 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
             logger.info(f"Gekürzte Vorschau des bereinigten Textes: '{(' '.join(final_text_parts))[:200]}...'")
     else:
         final_text_parts = pages_raw_text
+
+    # --- DEBUG: Print Doctr output ---
+    #if engine == "doctr":
+    #    print("[DEBUG] Doctr OCR output:", pages_raw_text)
+    #    print("[DEBUG] Doctr cleaned text:", final_text_parts)
 
     llm_output = ollama_extract_invoice_fields(final_text_parts)
 

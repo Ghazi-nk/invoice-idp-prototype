@@ -40,20 +40,22 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
     full_text = "\n".join(texts)
     return json.dumps(full_text, ensure_ascii=False)
 
-def paddleocr_pdf_to_text(png_path: str, lang: str = 'german') -> str:
-    """Extracts text from a PNG image using PaddleOCR. Returns the result as a JSON string."""
+def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> list[str]:
+    """Extracts text from each page of a PDF using PaddleOCR. Returns a list of strings (one per page)."""
     if PaddleOCR is None:
         logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
         raise RuntimeError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
     ocr = PaddleOCR(use_textline_orientation=True, lang=lang)
-    result = ocr.predict(png_path)
-    texts = []
-    if result and result[0]:
-        image_result = result[0]
-        if 'rec_texts' in image_result:
-            texts = image_result['rec_texts']
-    full_text = "\n".join(texts)
-    return json.dumps(full_text, ensure_ascii=False)
+    results = ocr.predict(pdf_path) or []
+    page_texts = []
+    for page_result in results:
+        if isinstance(page_result, dict) and 'rec_texts' in page_result and isinstance(page_result['rec_texts'], list):
+            rec_texts = [(t if isinstance(t, str) else "") for t in page_result['rec_texts'] if t is not None]
+            page_text = "\n".join(rec_texts)
+        else:
+            page_text = str(page_result)
+        page_texts.append(page_text)
+    return page_texts
 
 
 if __name__ == "__main__":
