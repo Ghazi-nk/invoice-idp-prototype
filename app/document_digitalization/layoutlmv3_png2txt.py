@@ -1,9 +1,6 @@
-# FILE: document_digitalization/layoutlmv3_png2txt.py
-# UPDATED to output plain text
-
 import os
 import re
-from typing import List, Dict
+from typing import List, Dict, Any
 
 import numpy as np
 from PIL import Image
@@ -21,7 +18,7 @@ logger = logging.getLogger("layoutlmv3_png2txt")
 def layoutlm_image_to_text(image_path: str) -> str:
     """
     Extracts text chunks from an image using LayoutLMv3 and returns
-    a single plain-text string.
+    a formatted text string with y-coordinates similar to doctr output.
     Logs errors if processing fails.
     """
     try:
@@ -34,10 +31,19 @@ def layoutlm_image_to_text(image_path: str) -> str:
         thresh = _compute_dynamic_threshold(sorted_lines)
         chunks = _chunk_all_lines(sorted_lines, thresh)
         chunk_objs = _make_chunk_objects(chunks)
-
-        # --- CHANGE: Convert to plain text instead of JSON ---
-        plain_text = "\n".join([obj['text'] for obj in chunk_objs])
-        return plain_text
+        
+        # Format lines similar to doctr's output with y-coordinates
+        formatted_lines = []
+        for chunk in chunk_objs:
+            # Extract y-coordinate (middle point of the vertical coordinates)
+            x0, y0, x1, y1 = chunk["bbox"]
+            y_center = int((y0 + y1) / 2)
+            
+            # Format text with y-coordinate and quotes like doctr
+            formatted_line = f'[y={y_center}] "{chunk["text"]}"'
+            formatted_lines.append(formatted_line)
+        print(formatted_lines)
+        return "\n".join(formatted_lines)
     except Exception as e:
         logger.exception(f"layoutlm_image_to_text failed for '{image_path}':")
         raise
