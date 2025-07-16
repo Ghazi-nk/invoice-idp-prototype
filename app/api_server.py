@@ -47,10 +47,6 @@ class PDFRequest(BaseModel):
 # --- Response Models ---
 # =============================================================================
 
-class ExtractedInvoiceResponse(BaseModel):
-    """Response model for extracted invoice data."""
-    data: dict
-
 class OCRTextResponse(BaseModel):
     """Response model for OCR text extraction."""
     ocr_text: List[str]
@@ -58,6 +54,36 @@ class OCRTextResponse(BaseModel):
 class ImagesResponse(BaseModel):
     """Response model for PDF-to-images conversion."""
     images: List[str]
+
+
+class InvoiceExtractionResponse(BaseModel):
+    invoice_date: Optional[str] = Field(default=None, example="01.01.2024")
+    vendor_name: Optional[str] = Field(default=None, example="Max Mustermann GmbH")
+    invoice_number: Optional[str] = Field(default=None, example="RE-2024-0001")
+    recipient_name: Optional[str] = Field(default=None, example="Erika Musterfrau AG")
+    total_amount: Optional[float] = Field(default=None, example=1234.56)
+    currency: Optional[str] = Field(default=None, example="EUR")
+    purchase_order_number: Optional[str] = Field(default=None, example=None)
+    ust_id: Optional[str] = Field(default=None, example=None, alias="ust-id")
+    iban: Optional[str] = Field(default=None, example="DE00123456781234567890")
+    tax_rate: Optional[float] = Field(default=None, example=19.0)
+
+    class Config:
+        allow_population_by_field_name = True
+        schema_extra = {
+            "example": {
+                "invoice_date": "01.01.2024",
+                "vendor_name": "Max Mustermann GmbH",
+                "invoice_number": "RE-2024-0001",
+                "recipient_name": "Erika Musterfrau AG",
+                "total_amount": 1234.56,
+                "currency": "EUR",
+                "purchase_order_number": None,
+                "ust-id": None,
+                "iban": "DE00123456781234567890",
+                "tax_rate": 19.0
+            }
+        }
 
 
 # =============================================================================
@@ -80,21 +106,11 @@ def select_engine(engine: Optional[str]) -> str:
     return engine_to_use
 
 
-@app.post("/api/v1/extract", summary="Extract Invoice Data", response_model=ExtractedInvoiceResponse)
-def extract_data(request: InvoiceRequest) -> ExtractedInvoiceResponse:
+@app.post("/api/v1/extract", summary="Extract Invoice Data", response_model=InvoiceExtractionResponse)
+def extract_data(request: InvoiceRequest) -> InvoiceExtractionResponse:
     """
     Receives a base64-encoded PDF invoice and returns the extracted structured data as JSON.
     
-    Request Example:
-    {
-        "invoice_base64": "...",
-        "engine": "tesseract"
-    }
-    
-    Response Example:
-    {
-        "data": {"field1": "value1", ...}
-    }
     """
     engine_to_use = select_engine(request.engine)
     try:
@@ -107,27 +123,31 @@ def extract_data(request: InvoiceRequest) -> ExtractedInvoiceResponse:
                 engine=engine_to_use,
                 clean=True
             )
-            return ExtractedInvoiceResponse(data=extracted_data)
+            # Map 'ust-id' to 'ust_id' for the model
+            if 'ust-id' in extracted_data:
+                extracted_data['ust_id'] = extracted_data.pop('ust-id')
+            return InvoiceExtractionResponse(**extracted_data)
     except Exception as e:
         handle_error(e)
-        return ExtractedInvoiceResponse(data={})
+        return InvoiceExtractionResponse(
+            invoice_date="",
+            vendor_name="",
+            invoice_number="",
+            recipient_name="",
+            total_amount=0.0,
+            currency="",
+            purchase_order_number=None,
+            ust_id=None,
+            iban="",
+            tax_rate=0.0
+        )
 
 
 @app.post("/api/v1/ocr", summary="Get Raw OCR Text", response_model=OCRTextResponse)
 def get_ocr_text(request: InvoiceRequest) -> OCRTextResponse:
     """
     Receives a base64-encoded PDF invoice and returns the raw OCR text per page.
-    
-    Request Example:
-    {
-        "invoice_base64": "...",
-        "engine": "tesseract"
-    }
-    
-    Response Example:
-    {
-        "ocr_text": ["page 1 text", "page 2 text", ...]
-    }
+
     """
     engine_to_use = select_engine(request.engine)
     try:
@@ -146,16 +166,7 @@ def get_ocr_text(request: InvoiceRequest) -> OCRTextResponse:
 def pdf_to_images_base64(request: PDFRequest) -> ImagesResponse:
     """
     Receives a base64-encoded PDF and returns a list of base64-encoded PNG images for each page.
-    
-    Request Example:
-    {
-        "invoice_base64": "..."
-    }
-    
-    Response Example:
-    {
-        "images": ["base64img1", "base64img2", ...]
-    }
+
     """
     try:
         with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
