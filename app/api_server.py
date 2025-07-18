@@ -41,12 +41,12 @@ class InvoiceRequest(BaseModel):
 
 class PDFRequest(BaseModel):
     """Request body for PDF utility endpoints."""
-    invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
-
+    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
 
 class PDFQueryRequest(BaseModel):
     """Request body for PDF query endpoint."""
-    invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
     prompt: str = Field(..., description="The prompt to send to Ollama.")
     engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
 
@@ -96,7 +96,7 @@ class InvoiceExtractionResponse(BaseModel):
         
         
 class SearchableTextRequest(BaseModel):
-    invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
 
 class SearchableTextResponse(BaseModel):
     text: str = Field(..., description="All extracted searchable text from the PDF.")
@@ -131,7 +131,7 @@ def select_engine(engine: Optional[str]) -> str:
     return engine_to_use
 
 
-@app.post("/api/v1/extract", summary="Extract Invoice Data", response_model=InvoiceExtractionResponse)
+@app.post("/api/v1/invoice-extract", summary="Extract Invoice Data", response_model=InvoiceExtractionResponse)
 def extract_data(request: InvoiceRequest) -> InvoiceExtractionResponse:
     """
     Receives a base64-encoded PDF invoice and returns the extracted structured data as JSON.
@@ -169,14 +169,14 @@ def extract_data(request: InvoiceRequest) -> InvoiceExtractionResponse:
 
 
 @app.post("/api/v1/ocr", summary="Get Raw OCR Text", response_model=OCRTextResponse)
-def get_ocr_text(request: InvoiceRequest) -> OCRTextResponse:
+def get_ocr_text(request: PDFRequest) -> OCRTextResponse:
     """
     Receives a base64-encoded PDF invoice and returns the raw OCR text per page.
 
     """
     engine_to_use = select_engine(request.engine)
     try:
-        with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
+        with save_base64_to_temp_pdf(request.pdf_base64) as temp_pdf_path:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
 
@@ -200,7 +200,7 @@ def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextRes
     Extracts all searchable text from a PDF (no OCR). Returns as a single string.
     """
     try:
-        with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
+        with save_base64_to_temp_pdf(request.pdf_base64) as temp_pdf_path:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
             text_json = extract_text_if_searchable(temp_pdf_path)
@@ -212,7 +212,7 @@ def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextRes
         handle_error(e)
         return SearchableTextResponse(text="")
 
-@app.post("/api/v1/llm-extract", summary="LLM-based Field Extraction", response_model=LLMExtractResponse)
+@app.post("/api/v1/llm-invoice-extract", summary="LLM-based Field Extraction", response_model=LLMExtractResponse)
 def llm_extract(request: LLMExtractRequest) -> LLMExtractResponse:
     """
     Runs LLM-based field extraction on provided OCR text pages. Returns extracted invoice fields.
@@ -232,7 +232,7 @@ def pdf_query(request: PDFQueryRequest) -> PDFQueryResponse:
     """
     engine_to_use = select_engine(request.engine)
     try:
-        with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
+        with save_base64_to_temp_pdf(request.pdf_base64) as temp_pdf_path:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
 
