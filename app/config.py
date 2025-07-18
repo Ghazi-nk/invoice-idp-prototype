@@ -27,7 +27,7 @@ PDF_QUERY_USER_PROMPT = str(PDF_QUERY_PROMPTS_DIR / 'user_prompt')
 
 # Legacy/compatibility variables - will now point to extract_prompts
 SYSTEM_PROMPT_FILE = EXTRACT_SYSTEM_PROMPT
-USER_PROMPT_OCR_FILE = EXTRACT_USER_PROMPT
+USER_PROMPT_FILE = EXTRACT_USER_PROMPT
 
 # =============================================================================
 # --- API Configuration ---

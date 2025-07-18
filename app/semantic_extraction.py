@@ -11,7 +11,7 @@ from app.config import (
     CHAT_ENDPOINT,
     OLLAMA_MODEL,
     SYSTEM_PROMPT_FILE,
-    USER_PROMPT_OCR_FILE,
+    USER_PROMPT_FILE,
     PDF_QUERY_SYSTEM_PROMPT,
     PDF_QUERY_USER_PROMPT
 )
@@ -25,11 +25,11 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     # 1. Load the appropriate prompt files based on the engine type
     try:
         # Use the Path object only if the file paths are not None
-        if SYSTEM_PROMPT_FILE is None or USER_PROMPT_OCR_FILE is None:
+        if SYSTEM_PROMPT_FILE is None or USER_PROMPT_FILE is None:
             raise FileNotFoundError("Required prompt files are not set in environment variables.")
         
         system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
-        user_prompt = Path(USER_PROMPT_OCR_FILE).read_text(encoding="utf-8")
+        user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
     except FileNotFoundError as e:
         raise RuntimeError(f"Could not find a required prompt file: {e}")
 
