@@ -11,7 +11,9 @@ from app.config import (
     CHAT_ENDPOINT,
     OLLAMA_MODEL,
     SYSTEM_PROMPT_FILE,
-    USER_PROMPT_OCR_FILE
+    USER_PROMPT_OCR_FILE,
+    PDF_QUERY_SYSTEM_PROMPT,
+    PDF_QUERY_USER_PROMPT
 )
 
 
@@ -92,9 +94,17 @@ def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
     Returns:
         The raw string response from Ollama
     """
-    # Build the message list with a generic system prompt
+    # Load the system prompt for PDF querying
+    try:
+        system_prompt = Path(PDF_QUERY_SYSTEM_PROMPT).read_text(encoding="utf-8")
+    except FileNotFoundError as e:
+        # Fall back to a generic system prompt if the file is missing
+        system_prompt = "You are a helpful assistant for document processing."
+        print(f"Warning: Could not find PDF query system prompt file: {e}")
+    
+    # Build the message list with the system prompt
     messages = [
-        {"role": "system", "content": "You are a helpful assistant for document processing."}
+        {"role": "system", "content": system_prompt.strip()}
     ]
 
     # Add each page's text as a separate user message
@@ -103,8 +113,20 @@ def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
         message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
         messages.append({"role": "user", "content": message_content})
 
-    # Add the custom user prompt
-    messages.append({"role": "user", "content": prompt})
+    # Load the user prompt template if available
+    try:
+        user_prompt_template = Path(PDF_QUERY_USER_PROMPT).read_text(encoding="utf-8")
+        # Replace the placeholder with the user's custom prompt
+        user_prompt = user_prompt_template.replace("[Hier den OCR-Rohtext einfügen]", "")
+        # Add the custom prompt at the end
+        final_prompt = f"{user_prompt.strip()}\n\n{prompt}"
+    except FileNotFoundError as e:
+        # Fall back to just using the custom prompt if the file is missing
+        final_prompt = prompt
+        print(f"Warning: Could not find PDF query user prompt file: {e}")
+
+    # Add the final user prompt
+    messages.append({"role": "user", "content": final_prompt})
 
     # Send the complete conversation to the chat endpoint
     body = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
