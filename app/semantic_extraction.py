@@ -1,7 +1,8 @@
 import json
 import re
+import warnings
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import requests
 
@@ -21,6 +22,10 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     """
     # 1. Load the appropriate prompt files based on the engine type
     try:
+        # Use the Path object only if the file paths are not None
+        if SYSTEM_PROMPT_FILE is None or USER_PROMPT_OCR_FILE is None:
+            raise FileNotFoundError("Required prompt files are not set in environment variables.")
+        
         system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
         user_prompt = Path(USER_PROMPT_OCR_FILE).read_text(encoding="utf-8")
     except FileNotFoundError as e:
@@ -46,7 +51,9 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     # 5. Send the complete conversation to the chat endpoint.
     body = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
 
-    requests.packages.urllib3.disable_warnings()
+    # Suppress warnings
+    warnings.filterwarnings("ignore")
+    
     print(f"Sending {len(messages)} messages ({num_pages} pages) to the chat model...")
     resp = requests.post(CHAT_ENDPOINT, json=body, verify=False, timeout=600)
 
@@ -72,6 +79,50 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
         return json.loads(json_chunk)
     except json.JSONDecodeError as e:
         raise ValueError(f"JSON still malformed after processing: {e}\nChunk:\n{json_chunk!r}")
+
+
+def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
+    """
+    Processes OCR text with a custom prompt and returns the raw Ollama response.
+    
+    Args:
+        ocr_pages: List of strings containing OCR text from each page
+        prompt: The custom prompt to send to Ollama
+        
+    Returns:
+        The raw string response from Ollama
+    """
+    # Build the message list with a generic system prompt
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant for document processing."}
+    ]
+
+    # Add each page's text as a separate user message
+    num_pages = len(ocr_pages)
+    for i, page_text in enumerate(ocr_pages):
+        message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
+        messages.append({"role": "user", "content": message_content})
+
+    # Add the custom user prompt
+    messages.append({"role": "user", "content": prompt})
+
+    # Send the complete conversation to the chat endpoint
+    body = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
+
+    # Suppress warnings
+    warnings.filterwarnings("ignore")
+    
+    resp = requests.post(CHAT_ENDPOINT, json=body, verify=False, timeout=600)
+
+    if resp.status_code != 200:
+        raise RuntimeError(f"Ollama API Error: {resp.status_code} – {resp.text}")
+
+    # Extract the raw content from the response
+    try:
+        raw_content = resp.json().get("message", {}).get("content", "")
+        return raw_content
+    except (AttributeError, KeyError, json.JSONDecodeError) as e:
+        raise ValueError(f"Ollama chat response is not in the expected format: {e}")
 
 
 def _extract_first_complete_json(text: str) -> str | None:
