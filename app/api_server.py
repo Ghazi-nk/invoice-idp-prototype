@@ -2,7 +2,7 @@
 
 import os
 import base64
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Union
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
@@ -15,7 +15,7 @@ from app.document_processing import (
     ocr_pdf
 )
 from app.document_digitalization.pdf_utils import pdf_to_png_with_pymupdf, save_base64_to_temp_pdf, encode_image_to_base64, extract_text_if_searchable
-from app.semantic_extraction import ollama_extract_invoice_fields
+from app.semantic_extraction import ollama_extract_invoice_fields, ollama_process_with_custom_prompt
 
 import logging
 
@@ -44,6 +44,13 @@ class PDFRequest(BaseModel):
     invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
 
 
+class PDFQueryRequest(BaseModel):
+    """Request body for PDF query endpoint."""
+    invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+    prompt: str = Field(..., description="The prompt to send to Ollama.")
+    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
+
+
 # =============================================================================
 # --- Response Models ---
 # =============================================================================
@@ -58,16 +65,17 @@ class ImagesResponse(BaseModel):
 
 
 class InvoiceExtractionResponse(BaseModel):
-    invoice_date: Optional[str] = Field(default=None, example="01.01.2024")
-    vendor_name: Optional[str] = Field(default=None, example="Max Mustermann GmbH")
-    invoice_number: Optional[str] = Field(default=None, example="RE-2024-0001")
-    recipient_name: Optional[str] = Field(default=None, example="Erika Musterfrau AG")
-    total_amount: Optional[float] = Field(default=None, example=1234.56)
-    currency: Optional[str] = Field(default=None, example="EUR")
-    purchase_order_number: Optional[str] = Field(default=None, example=None)
-    ust_id: Optional[str] = Field(default=None, example=None, alias="ust-id")
-    iban: Optional[str] = Field(default=None, example="DE00123456781234567890")
-    tax_rate: Optional[float] = Field(default=None, example=19.0)
+    """Response model for invoice data extraction."""
+    invoice_date: Optional[str] = None
+    vendor_name: Optional[str] = None
+    invoice_number: Optional[str] = None
+    recipient_name: Optional[str] = None
+    total_amount: Optional[float] = None
+    currency: Optional[str] = None
+    purchase_order_number: Optional[str] = None
+    ust_id: Optional[str] = None
+    iban: Optional[str] = None
+    tax_rate: Optional[float] = None
 
     class Config:
         allow_population_by_field_name = True
@@ -85,8 +93,8 @@ class InvoiceExtractionResponse(BaseModel):
                 "tax_rate": 19.0
             }
         }
-
-
+        
+        
 class SearchableTextRequest(BaseModel):
     invoice_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
 
@@ -98,6 +106,9 @@ class LLMExtractRequest(BaseModel):
 
 class LLMExtractResponse(BaseModel):
     fields: dict = Field(..., description="Extracted invoice fields from LLM.")
+
+class PDFQueryResponse(BaseModel):
+    response: str = Field(..., description="Response from the language model.")
 
 
 # =============================================================================
@@ -195,7 +206,7 @@ def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextRes
             text_json = extract_text_if_searchable(temp_pdf_path)
             # text_json is a JSON string, so parse it
             import json
-            text = json.loads(text_json) if text_json else ""
+            text = json.loads(text_json) if text_json and isinstance(text_json, (str, bytes, bytearray)) else ""
             return SearchableTextResponse(text=text)
     except Exception as e:
         handle_error(e)
@@ -212,6 +223,29 @@ def llm_extract(request: LLMExtractRequest) -> LLMExtractResponse:
     except Exception as e:
         handle_error(e)
         return LLMExtractResponse(fields={})
+
+
+@app.post("/api/v1/pdf-query", summary="Query PDF with Custom Prompt", response_model=PDFQueryResponse)
+def pdf_query(request: PDFQueryRequest) -> PDFQueryResponse:
+    """
+    Receives a base64-encoded PDF and a custom prompt, performs OCR, and returns the language model's response.
+    """
+    engine_to_use = select_engine(request.engine)
+    try:
+        with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
+            if not temp_pdf_path:
+                raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
+
+            # Get OCR text from the PDF
+            ocr_text_per_page = ocr_pdf(pdf_path=temp_pdf_path, engine=engine_to_use)
+            
+            # Process with custom prompt and get raw response
+            response_content = ollama_process_with_custom_prompt(ocr_text_per_page, request.prompt)
+            
+            return PDFQueryResponse(response=response_content)
+    except Exception as e:
+        handle_error(e)
+        return PDFQueryResponse(response=f"Error: {str(e)}")
 
 
 def handle_error(e: Exception):
