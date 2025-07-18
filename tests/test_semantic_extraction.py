@@ -69,7 +69,7 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
         # Wir müssen den mock_open Helfer verwenden, da der Code `Path(...).read_text()` aufruft
         mock_file_content = {
             llm_utils.SYSTEM_PROMPT_FILE: mock_system_prompt,
-            llm_utils.USER_PROMPT_OCR_FILE: mock_user_prompt,
+            llm_utils.USER_PROMPT_FILE: mock_user_prompt,
         }
         mock_path.return_value.read_text.side_effect = lambda encoding: mock_file_content[str(mock_path.return_value)]
 
