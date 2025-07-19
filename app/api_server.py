@@ -3,6 +3,7 @@
 import os
 import base64
 from typing import Optional, List, Dict, Any, Union
+from unittest import result
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response
@@ -33,36 +34,30 @@ DEFAULT_ENGINE = "tesseract"
 # --- Request Models ---
 # =============================================================================
 
-class InvoiceRequest(BaseModel):
-    """Request body for extraction and OCR endpoints."""
-    invoice_base64: str = Field(..., description="The PDF invoice file encoded as a base64 string.")
-    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
-
-
-class PDFRequest(BaseModel):
-    """Request body for PDF utility endpoints."""
+class BaseRequest(BaseModel):
+    """Base request model for endpoints that require a PDF file."""
     pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
     engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
 
-class PDFQueryRequest(BaseModel):
-    """Request body for PDF query endpoint."""
-    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
+class PDFQueryRequest(BaseRequest):
+    """Request body for PDF query endpoint with custom prompt."""
     prompt: str = Field(..., description="The prompt to send to Ollama.")
-    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
 
+class LLMExtractRequest(BaseModel):
+    """Request for LLM-based invoice field extraction from pre-processed OCR text."""
+    ocr_pages: List[str] = Field(..., description="List of OCR text per page.")
 
 # =============================================================================
 # --- Response Models ---
 # =============================================================================
 
+class TextResponse(BaseModel):
+    """Base response model for text data."""
+    result: str = Field(..., description="Extracted text data.")
+
 class OCRTextResponse(BaseModel):
     """Response model for OCR text extraction."""
-    ocr_text: List[str]
-
-class ImagesResponse(BaseModel):
-    """Response model for PDF-to-images conversion."""
-    images: List[str]
-
+    ocr_text: List[str] = Field(..., description="List of OCR text extracted from each page.")
 
 class InvoiceExtractionResponse(BaseModel):
     """Response model for invoice data extraction."""
@@ -94,22 +89,6 @@ class InvoiceExtractionResponse(BaseModel):
             }
         }
         
-        
-class SearchableTextRequest(BaseModel):
-    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
-
-class SearchableTextResponse(BaseModel):
-    text: str = Field(..., description="All extracted searchable text from the PDF.")
-
-class LLMExtractRequest(BaseModel):
-    ocr_pages: List[str] = Field(..., description="List of OCR text per page.")
-
-class LLMExtractResponse(BaseModel):
-    fields: dict = Field(..., description="Extracted invoice fields from LLM.")
-
-class PDFQueryResponse(BaseModel):
-    response: str = Field(..., description="Response from the language model.")
-
 
 # =============================================================================
 # --- API Endpoints ---
@@ -132,14 +111,14 @@ def select_engine(engine: Optional[str]) -> str:
 
 
 @app.post("/api/v1/invoice-extract", summary="Extract Invoice Data", response_model=InvoiceExtractionResponse)
-def extract_data(request: InvoiceRequest) -> InvoiceExtractionResponse:
+def extract_data(request: BaseRequest) -> InvoiceExtractionResponse:
     """
     Receives a base64-encoded PDF invoice and returns the extracted structured data as JSON.
     
     """
     engine_to_use = select_engine(request.engine)
     try:
-        with save_base64_to_temp_pdf(request.invoice_base64) as temp_pdf_path:
+        with save_base64_to_temp_pdf(request.pdf_base64) as temp_pdf_path:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
 
@@ -169,7 +148,7 @@ def extract_data(request: InvoiceRequest) -> InvoiceExtractionResponse:
 
 
 @app.post("/api/v1/ocr", summary="Get Raw OCR Text", response_model=OCRTextResponse)
-def get_ocr_text(request: PDFRequest) -> OCRTextResponse:
+def get_ocr_text(request: BaseRequest) -> OCRTextResponse:
     """
     Receives a base64-encoded PDF invoice and returns the raw OCR text per page.
 
@@ -194,8 +173,8 @@ def get_ocr_engines() -> List[str]:
     """
     return get_available_engines()
 
-@app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=SearchableTextResponse)
-def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextResponse:
+@app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=TextResponse)
+def extract_searchable_text(request: BaseRequest) -> TextResponse:
     """
     Extracts all searchable text from a PDF (no OCR). Returns as a single string.
     """
@@ -207,26 +186,40 @@ def extract_searchable_text(request: SearchableTextRequest) -> SearchableTextRes
             # text_json is a JSON string, so parse it
             import json
             text = json.loads(text_json) if text_json and isinstance(text_json, (str, bytes, bytearray)) else ""
-            return SearchableTextResponse(text=text)
+            return TextResponse(result=text)
     except Exception as e:
         handle_error(e)
-        return SearchableTextResponse(text="")
+        return TextResponse(result="")
 
-@app.post("/api/v1/llm-invoice-extract", summary="LLM-based Field Extraction", response_model=LLMExtractResponse)
-def llm_extract(request: LLMExtractRequest) -> LLMExtractResponse:
+@app.post("/api/v1/llm-invoice-extract", summary="LLM-based Field Extraction", response_model=InvoiceExtractionResponse)
+def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
     """
     Runs LLM-based field extraction on provided OCR text pages. Returns extracted invoice fields.
     """
     try:
-        fields = ollama_extract_invoice_fields(request.ocr_pages)
-        return LLMExtractResponse(fields=fields)
+        extracted_data = ollama_extract_invoice_fields(request.ocr_pages)
+        # Map 'ust-id' to 'ust_id' for the model if needed
+        if 'ust-id' in extracted_data:
+            extracted_data['ust_id'] = extracted_data.pop('ust-id')
+        return InvoiceExtractionResponse(**extracted_data)
     except Exception as e:
         handle_error(e)
-        return LLMExtractResponse(fields={})
+        return InvoiceExtractionResponse(
+            invoice_date="",
+            vendor_name="",
+            invoice_number="",
+            recipient_name="",
+            total_amount=0.0,
+            currency="",
+            purchase_order_number=None,
+            ust_id=None,
+            iban="",
+            tax_rate=0.0
+        )
 
 
-@app.post("/api/v1/pdf-query", summary="Query PDF with Custom Prompt", response_model=PDFQueryResponse)
-def pdf_query(request: PDFQueryRequest) -> PDFQueryResponse:
+@app.post("/api/v1/pdf-query", summary="Query PDF with Custom Prompt", response_model=TextResponse)
+def pdf_query(request: PDFQueryRequest) -> TextResponse:
     """
     Receives a base64-encoded PDF and a custom prompt, performs OCR, and returns the language model's response.
     """
@@ -242,10 +235,10 @@ def pdf_query(request: PDFQueryRequest) -> PDFQueryResponse:
             # Process with custom prompt and get raw response
             response_content = ollama_process_with_custom_prompt(ocr_text_per_page, request.prompt)
             
-            return PDFQueryResponse(response=response_content)
+            return TextResponse(result=response_content)
     except Exception as e:
         handle_error(e)
-        return PDFQueryResponse(response=f"Error: {str(e)}")
+        return TextResponse(result=f"Error: {str(e)}")
 
 
 def handle_error(e: Exception):
