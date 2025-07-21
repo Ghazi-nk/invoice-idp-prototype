@@ -1,12 +1,9 @@
-# FILE: app/api_server.py
 
-import os
-import base64
-from typing import Optional, List, Dict, Any, Union
-from unittest import result
+from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import Response
+
+from fastapi import FastAPI, HTTPException
+
 from pydantic import BaseModel, Field
 
 # --- Main pipeline functions ---
@@ -15,7 +12,7 @@ from app.document_processing import (
     get_available_engines,
     ocr_pdf
 )
-from app.document_digitalization.pdf_utils import pdf_to_png_with_pymupdf, save_base64_to_temp_pdf, encode_image_to_base64, extract_text_if_searchable
+from app.document_digitalization.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields, ollama_process_with_custom_prompt
 
 import logging
@@ -183,6 +180,8 @@ def extract_searchable_text(request: BaseRequest) -> TextResponse:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
             text_json = extract_text_if_searchable(temp_pdf_path)
+            if not text_json:
+                text_json = "pdf is not searchable or no text found."
             # text_json is a JSON string, so parse it
             import json
             text = json.loads(text_json) if text_json and isinstance(text_json, (str, bytes, bytearray)) else ""
