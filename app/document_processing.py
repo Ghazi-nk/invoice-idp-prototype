@@ -92,9 +92,6 @@ def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr") -> List[str]:
     return result
 
 
-def clean_ocr_text(raw_text: str, *, engine: str) -> str:
-    return preprocess_plain_text_output(raw_text)
-
 
 def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", clean: bool = True) -> Dict:
     """Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict."""
@@ -104,7 +101,7 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
     final_text_parts: List[str] = []
     if clean:
         for i, page_text in enumerate(pages_raw_text):
-            cleaned_page_text = clean_ocr_text(page_text, engine=engine)
+            cleaned_page_text = preprocess_plain_text_output(page_text)
             final_text_parts.append(cleaned_page_text)
             logger.info(f"Seite {i + 1} bereinigt.")
         if final_text_parts:
