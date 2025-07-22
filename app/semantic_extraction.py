@@ -1,8 +1,9 @@
 import json
 import re
+import time
 import warnings
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 
 import requests
 
@@ -17,10 +18,13 @@ from app.config import (
 )
 
 
-def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
+def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
     """
     Extracts invoice fields by sending OCR text to an LLM, using a prompt strategy
     based on the type of OCR data provided.
+    
+    Returns:
+        A tuple containing (extracted_fields, ollama_duration)
     """
     # 1. Load the appropriate prompt files based on the engine type
     try:
@@ -57,7 +61,9 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     warnings.filterwarnings("ignore")
     
     print(f"Sending {len(messages)} messages ({num_pages} pages) to the chat model...")
+    ollama_start_time = time.perf_counter()
     resp = requests.post(CHAT_ENDPOINT, json=body, verify=False, timeout=600)
+    ollama_duration = time.perf_counter() - ollama_start_time
 
     if resp.status_code != 200:
         raise RuntimeError(f"Ollama API Error: {resp.status_code} – {resp.text}")
@@ -78,7 +84,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Dict:
     json_chunk = re.sub(r'^\{\{(.*)\}\}$', r'{\1}', json_chunk, count=1, flags=re.DOTALL)
 
     try:
-        return json.loads(json_chunk)
+        return json.loads(json_chunk), ollama_duration
     except json.JSONDecodeError as e:
         raise ValueError(f"JSON still malformed after processing: {e}\nChunk:\n{json_chunk!r}")
 

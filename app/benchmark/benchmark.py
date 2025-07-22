@@ -77,21 +77,31 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
             page_texts = extract_text_if_searchable(str(pdf_path))
             # Clean text if needed
             final_text_parts = [preprocess_plain_text_output(page) for page in page_texts]
-            llm_output = ollama_extract_invoice_fields(final_text_parts)
+            llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts)
             full_text_for_verification = "\n".join(final_text_parts)
             pred = finalize_extracted_fields(verify_and_correct_fields(llm_output, full_text_for_verification))
+            total_duration = time.perf_counter() - start_time
+            processing_duration = total_duration - ollama_duration
         else:
-            pred = extract_invoice_fields_from_pdf(
+            pred, ollama_duration, processing_duration = extract_invoice_fields_from_pdf(
                 pdf_path=str(pdf_path),
                 engine=engine,
                 clean=True,
                 include_bbox=use_bbox
             )
-        duration = round(time.perf_counter() - start_time, 3)
+            total_duration = ollama_duration + processing_duration
+        
+        # Round durations to 3 decimal places
+        ollama_duration = round(ollama_duration, 3)
+        processing_duration = round(processing_duration, 3)
+        total_duration = round(total_duration, 3)
 
         fields = list(gt.keys())
         summary_row = {"invoice": base_name, "pipeline": engine_name, 
-                      "duration": duration, "searchable": is_searchable,
+                      "ollama_duration": ollama_duration, 
+                      "processing_duration": processing_duration, 
+                      "total_duration": total_duration, 
+                      "searchable": is_searchable,
                       "with_bbox": use_bbox}
         detail_rows = []
         correct = tp = fp = fn = 0
@@ -121,7 +131,7 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
         # --- NEW: Check business rule acceptance ---
         summary_row["acceptance"] = int(check_acceptance(gt, pred))
 
-        print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {duration}s.")
+        print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {total_duration}s.")
         return {"summary": summary_row, "details": detail_rows}
 
     except Exception as e:
@@ -140,7 +150,9 @@ def generate_final_results():
         return
 
     pipeline_metrics = collections.defaultdict(lambda: {
-        'accuracies': [], 'precisions': [], 'recalls': [], 'f1s': [], 'durations': [], 'acceptances': []
+        'accuracies': [], 'precisions': [], 'recalls': [], 'f1s': [], 
+        'ollama_durations': [], 'processing_durations': [], 'total_durations': [], 
+        'acceptances': []
     })
 
     with open(OUTPUT_SUMMARY_CSV, "r", encoding="utf-8") as f:
@@ -151,10 +163,22 @@ def generate_final_results():
             pipeline_metrics[pipeline]['precisions'].append(float(row['precision']))
             pipeline_metrics[pipeline]['recalls'].append(float(row['recall']))
             pipeline_metrics[pipeline]['f1s'].append(float(row['f1']))
-            pipeline_metrics[pipeline]['durations'].append(float(row['duration']))
+            
+            # Check if we have the new duration fields or the old 'duration' field
+            if 'total_duration' in row:
+                pipeline_metrics[pipeline]['total_durations'].append(float(row['total_duration']))
+                pipeline_metrics[pipeline]['ollama_durations'].append(float(row['ollama_duration']))
+                pipeline_metrics[pipeline]['processing_durations'].append(float(row['processing_duration']))
+            elif 'duration' in row:  # Backward compatibility
+                pipeline_metrics[pipeline]['total_durations'].append(float(row['duration']))
+                # Set default values for the new duration fields
+                pipeline_metrics[pipeline]['ollama_durations'].append(0.0)
+                pipeline_metrics[pipeline]['processing_durations'].append(float(row['duration']))
+            
             pipeline_metrics[pipeline]['acceptances'].append(float(row['acceptance']))
 
-    header = ["pipeline", "mean_accuracy", "mean_precision", "mean_recall", "mean_f1", "mean_duration",
+    header = ["pipeline", "mean_accuracy", "mean_precision", "mean_recall", "mean_f1", 
+              "mean_ollama_duration", "mean_processing_duration", "mean_total_duration",
               "acceptance_rate"]
     with open(OUTPUT_RESULTS_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=header)
@@ -166,7 +190,9 @@ def generate_final_results():
                 "mean_precision": round(statistics.mean(data['precisions']), 3),
                 "mean_recall": round(statistics.mean(data['recalls']), 3),
                 "mean_f1": round(statistics.mean(data['f1s']), 3),
-                "mean_duration": round(statistics.mean(data['durations']), 3),
+                "mean_ollama_duration": round(statistics.mean(data['ollama_durations']), 3),
+                "mean_processing_duration": round(statistics.mean(data['processing_durations']), 3),
+                "mean_total_duration": round(statistics.mean(data['total_durations']), 3),
                 "acceptance_rate": round(statistics.mean(data['acceptances']), 3)
             })
 
@@ -225,16 +251,17 @@ def main():
         summary_exists = os.path.exists(OUTPUT_SUMMARY_CSV)
         details_exists = os.path.exists(OUTPUT_DETAIL_CSV)
 
-        with open(OUTPUT_SUMMARY_CSV, "a", newline="", encoding="utf-8", buffering=1) as sum_f, \
-                open(OUTPUT_DETAIL_CSV, "a", newline="", encoding="utf-8", buffering=1) as det_f:
+        with open(OUTPUT_SUMMARY_CSV, "a" if summary_exists else "w", newline="", encoding="utf-8", buffering=1) as sum_f, \
+                open(OUTPUT_DETAIL_CSV, "a" if details_exists else "w", newline="", encoding="utf-8", buffering=1) as det_f:
 
             first_label_path = Path(LABELS_DIR) / f"{all_pdfs[0].stem}.json"
             with open(first_label_path, encoding="utf-8") as fh:
                 fields = list(json.load(fh).keys())
 
-            # --- Add 'with_bbox' to the headers ---
+            # --- Update header to include the new duration fields ---
             header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", 
-                             "recall", "f1", "acceptance", "duration", "searchable", "with_bbox"]
+                             "recall", "f1", "acceptance", "ollama_duration", 
+                             "processing_duration", "total_duration", "searchable", "with_bbox"]
             header_details = ["invoice", "pipeline", "field", "expected", "predicted", 
                              "match", "searchable", "with_bbox"]
 
