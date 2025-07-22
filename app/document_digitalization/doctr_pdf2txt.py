@@ -1,115 +1,103 @@
-import json
-from typing import List, Dict, Any
-import re
+"""
+DocTr OCR-Modul für PDF-Dokumente.
+"""
+import logging
+from typing import List, Dict, Any, Union
 
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
-import logging
-
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("doctr_pdf2txt")
 
 
-def _run_ocr(pdf_path: str) -> Dict[str, Any]:
-    """Run Doctr OCR on ``pdf_path`` and return the raw result object. Logs errors if OCR fails."""
+def doctr_pdf_to_text(pdf_path: str, include_bbox: bool = False) -> Union[List[str], List[List[Dict[str, Any]]]]:
+    """
+    Run DocTr OCR auf einer PDF-Datei und gibt entweder reinen Text oder strukturierte Daten zurück.
+    
+    Args:
+        pdf_path: Pfad zur PDF-Datei
+        include_bbox: Wenn True, werden strukturierte Daten mit Bounding-Box-Koordinaten zurückgegeben
+                     Wenn False, wird reiner Text ohne Koordinaten zurückgegeben
+    
+    Returns:
+        Bei include_bbox=False: Liste von Strings (einer pro Seite) mit reinem Text
+        Bei include_bbox=True: Liste von Listen von Dictionaries mit 'text' und 'bbox' Keys
+    """
     try:
+        # 1. OCR durchführen
         predictor = ocr_predictor(pretrained=True)
         document = DocumentFile.from_pdf(pdf_path)
-        return predictor(document)
+        result = predictor(document)
+        
+        # 2. Daten extrahieren und nach Seiten gruppieren
+        data = result.export()
+        pages_to_lines = {}
+        
+        # Text und Bounding-Boxen extrahieren
+        for page_index, page in enumerate(data.get("pages", []), start=1):
+            width, height = page.get("dimensions", (1, 1))
+            pages_to_lines.setdefault(page_index, [])
+            
+            # Linien aus Blöcken extrahieren
+            for block in page.get("blocks", []):
+                for line in block.get("lines", []):
+                    (x0n, y0n), (x1n, y1n) = line.get("geometry", ((0, 0), (0, 0)))
+                    abs_bbox = [
+                        int(x0n * width),
+                        int(y0n * height),
+                        int(x1n * width),
+                        int(y1n * height),
+                    ]
+                    text = " ".join(w.get("value", "") for w in line.get("words", []))
+                    pages_to_lines[page_index].append({
+                        "text": text,
+                        "bbox": abs_bbox,
+                    })
+        
+        # 3. Ausgabeformat generieren
+        output = []
+        for page_num in sorted(pages_to_lines.keys()):
+            lines = pages_to_lines[page_num]
+            
+            # Linien nach vertikaler Position sortieren
+            lines.sort(key=lambda l: (l['bbox'][1], l['bbox'][0]))
+            
+            # Horizontal benachbarte Linien auf gleicher Höhe zusammenführen
+            merged_lines = []
+            if lines:
+                current_line = lines[0]
+                for next_line in lines[1:]:
+                    y_center_current = (current_line['bbox'][1] + current_line['bbox'][3]) / 2
+                    y_center_next = (next_line['bbox'][1] + next_line['bbox'][3]) / 2
+                    
+                    # Wenn auf ähnlicher Höhe, zusammenführen
+                    if abs(y_center_current - y_center_next) < 10:
+                        current_line['text'] += " " + next_line['text']
+                        # Bounding-Box erweitern
+                        current_line['bbox'][0] = min(current_line['bbox'][0], next_line['bbox'][0])
+                        current_line['bbox'][1] = min(current_line['bbox'][1], next_line['bbox'][1])
+                        current_line['bbox'][2] = max(current_line['bbox'][2], next_line['bbox'][2])
+                        current_line['bbox'][3] = max(current_line['bbox'][3], next_line['bbox'][3])
+                    else:
+                        # Neue Zeile beginnen
+                        merged_lines.append(current_line)
+                        current_line = next_line
+                
+                merged_lines.append(current_line)  # Letzte Zeile hinzufügen
+            
+            # Je nach Parameter zurückgeben
+            if include_bbox:
+                # Strukturierte Daten mit Text und Bounding-Boxen
+                output.append([{'text': line['text'], 'bbox': line['bbox']} for line in merged_lines])
+            else:
+                # Reiner Text ohne Koordinaten - einfach die Textzeilen zusammenfügen
+                plain_text = "\n".join(line["text"] for line in merged_lines)
+                output.append(plain_text)
+        
+        return output
+            
     except Exception as e:
-        logger.exception(f"Doctr OCR failed for '{pdf_path}':")
-        raise
-
-
-def _extract_and_group_lines_by_page(result: Dict[str, Any]) -> Dict[int, List[Dict[str, Any]]]:
-    """
-    Processes a Doctr result to group all line objects by their page number.
-    Each line object will have its bounding box converted to absolute integer coordinates.
-    """
-    data = result.export()
-    pages_to_lines: Dict[int, List[Dict[str, Any]]] = {}
-
-    for page_index, page in enumerate(data.get("pages", []), start=1):
-        width, height = page.get("dimensions", (1, 1))
-        pages_to_lines.setdefault(page_index, [])
-
-        for block in page.get("blocks", []):
-            for line in block.get("lines", []):
-                (x0n, y0n), (x1n, y1n) = line.get("geometry", ((0, 0), (0, 0)))
-                abs_bbox = [
-                    int(x0n * width),
-                    int(y0n * height),
-                    int(x1n * width),
-                    int(y1n * height),
-                ]
-                text = " ".join(w.get("value", "") for w in line.get("words", []))
-                pages_to_lines[page_index].append({
-                    "text": text,
-                    "bbox": abs_bbox,
-                })
-    return pages_to_lines
-
-
-def _merge_lines_on_page(lines: List[Dict[str, Any]], y_tolerance: int = 10) -> List[Dict[str, Any]]:
-    """
-    Merges horizontally adjacent text lines that are on the same vertical level.
-    """
-    if not lines:
-        return []
-
-    lines.sort(key=lambda l: (l['bbox'][1], l['bbox'][0]))
-
-    merged_lines = []
-    current_line = lines[0]
-
-    for next_line in lines[1:]:
-        y_center_current = (current_line['bbox'][1] + current_line['bbox'][3]) / 2
-        y_center_next = (next_line['bbox'][1] + next_line['bbox'][3]) / 2
-
-        if abs(y_center_current - y_center_next) < y_tolerance:
-            current_line['text'] += " " + next_line['text']
-            current_line['bbox'][0] = min(current_line['bbox'][0], next_line['bbox'][0])
-            current_line['bbox'][1] = min(current_line['bbox'][1], next_line['bbox'][1])
-            current_line['bbox'][2] = max(current_line['bbox'][2], next_line['bbox'][2])
-            current_line['bbox'][3] = max(current_line['bbox'][3], next_line['bbox'][3])
-        else:
-            merged_lines.append(current_line)
-            current_line = next_line
-
-    merged_lines.append(current_line)
-    return merged_lines
-
-
-def doctr_pdf_to_text(pdf_path: str) -> List[str]:
-    """
-    Runs Doctr OCR, merges fragmented lines, and returns the plain-text page strings
-    – jetzt aber mit y-Koordinate pro Zeile, geeignet als LLM-Prompt-Eingabe.
-    Beispielzeile: [y=328] "Rechnung: Re-2/2015"
-    """
-    try:
-        result = _run_ocr(pdf_path)
-        pages_with_lines = _extract_and_group_lines_by_page(result)
-        final_page_strings: List[str] = []
-
-        sorted_page_numbers = sorted(pages_with_lines.keys())
-        for page_num in sorted_page_numbers:
-            raw_lines = pages_with_lines[page_num]
-            merged_page_lines = _merge_lines_on_page(raw_lines)
-
-            # --- NEU: Zeilen ins Prompt-Format bringen -----------------------
-            page_lines_for_prompt = []
-            for ln in merged_page_lines:
-                x0, y0, x1, y1 = ln["bbox"]
-                y_center = int((y0 + y1) / 2)
-                page_lines_for_prompt.append(f'[y={y_center}] "{ln["text"]}"')
-            # -----------------------------------------------------------------
-
-            plain_text = "\n".join(page_lines_for_prompt)
-            final_page_strings.append(plain_text)
-
-        return final_page_strings
-    except Exception:
-        logger.exception(f"doctr_pdf_to_text failed for '{pdf_path}':")
+        logger.exception(f"doctr_pdf_to_text failed for '{pdf_path}': {e}")
         raise
