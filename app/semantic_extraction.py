@@ -14,26 +14,37 @@ from app.config import (
     SYSTEM_PROMPT_FILE,
     USER_PROMPT_FILE,
     PDF_QUERY_SYSTEM_PROMPT,
-    PDF_QUERY_USER_PROMPT
+    PDF_QUERY_USER_PROMPT,
+    EXTRACT_BBOX_SYSTEM_PROMPT,
+    EXTRACT_BBOX_USER_PROMPT
 )
 
 
-def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
+def ollama_extract_invoice_fields(ocr_pages: List[str], include_bbox: bool = False) -> Tuple[Dict, float]:
     """
     Extracts invoice fields by sending OCR text to an LLM, using a prompt strategy
     based on the type of OCR data provided.
     
+    Args:
+        ocr_pages: List of strings containing OCR text from each page
+        include_bbox: Whether the input contains formatted bbox information
+    
     Returns:
         A tuple containing (extracted_fields, ollama_duration)
     """
-    # 1. Load the appropriate prompt files based on the engine type
+    # 1. Load the appropriate prompt files based on whether include_bbox is enabled
     try:
-        # Use the Path object only if the file paths are not None
-        if SYSTEM_PROMPT_FILE is None or USER_PROMPT_FILE is None:
-            raise FileNotFoundError("Required prompt files are not set in environment variables.")
-        
-        system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
-        user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
+        if include_bbox:
+            # Use bbox-specific prompts when bbox data is included
+            system_prompt = Path(EXTRACT_BBOX_SYSTEM_PROMPT).read_text(encoding="utf-8")
+            user_prompt = Path(EXTRACT_BBOX_USER_PROMPT).read_text(encoding="utf-8")
+        else:
+            # Use standard prompts for regular text extraction
+            if SYSTEM_PROMPT_FILE is None or USER_PROMPT_FILE is None:
+                raise FileNotFoundError("Required prompt files are not set in environment variables.")
+            
+            system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
+            user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
     except FileNotFoundError as e:
         raise RuntimeError(f"Could not find a required prompt file: {e}")
 

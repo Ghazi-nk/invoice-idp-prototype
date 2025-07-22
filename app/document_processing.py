@@ -189,7 +189,7 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
     logger.info(f"Gekürzte Vorschau des Textes: '{(' '.join(final_text_parts))[:200]}...'")
 
     # Now ollama_extract_invoice_fields returns a tuple (fields, ollama_duration)
-    llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts)
+    llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts, include_bbox=include_bbox)
 
     full_text_for_verification = "\n".join(final_text_parts)
     corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
