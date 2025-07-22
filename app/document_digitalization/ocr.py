@@ -5,12 +5,12 @@ import json
 
 import easyocr
 
-
+from pytesseract import image_to_string
 from typing import List
 
 from paddleocr import PaddleOCR
 
-from app.config import TMP_DIR, TESSERACT_CMD
+from app.config import TMP_DIR, SAMPLE_PNG_PATH, SAMPLE_PDF_PATH
 import logging
 
 # Setup logging
@@ -21,8 +21,8 @@ def tesseract_png_to_text(png_path: str) -> str:
     """Extracts text from a PNG image using Tesseract OCR. Returns the result as a JSON string."""
     base = os.path.splitext(os.path.basename(png_path))[0]
     txt_path = os.path.join(TMP_DIR, f"{base}.txt")
-    cmd = [TESSERACT_CMD, png_path, os.path.splitext(txt_path)[0], "-l", "deu"]
-    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    image_to_string(png_path, lang='deu', config='--psm 6')
+
     if not os.path.isfile(txt_path):
         logger.error(f"OCR-Text nicht gefunden: {txt_path}")
         raise RuntimeError(f"OCR-Text nicht gefunden: {txt_path}")
@@ -36,6 +36,7 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
         raise RuntimeError("EasyOCR is not installed. Please install with `pip install easyocr torch`.")
     reader = easyocr.Reader(languages, gpu=False)
     results = reader.readtext(png_path)
+    print(f"EasyOCR results: {results}")
     texts = [res[1] for res in results]
     full_text = "\n".join(texts)
     return json.dumps(full_text, ensure_ascii=False)
@@ -45,8 +46,9 @@ def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> list[str]:
     if PaddleOCR is None:
         logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
         raise RuntimeError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
-    ocr = PaddleOCR(use_textline_orientation=True, lang=lang)
+    ocr = PaddleOCR(use_angle_cls=False, lang=lang)
     results = ocr.predict(pdf_path) or []
+    print(f"PaddleOCR results: {results}")
     page_texts = []
     for page_result in results:
         if isinstance(page_result, dict) and 'rec_texts' in page_result and isinstance(page_result['rec_texts'], list):
@@ -60,11 +62,12 @@ def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> list[str]:
 
 if __name__ == "__main__":
     # Example usage
-    png_file = "../results/input/BRE-03.pdf"  # Replace with your image file path
+    png_file = SAMPLE_PNG_PATH
+    pdf_file = SAMPLE_PDF_PATH
     try:
         # text = tesseract_png_to_text(png_file)
         # logger.info(f"Tesseract OCR Output: {text}")
-
+        #
         # easyocr_text = easyocr_png_to_text(png_file)
         # logger.info(f"EasyOCR Output: {easyocr_text}")
 
