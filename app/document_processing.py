@@ -40,7 +40,7 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable[[str], str]) -> L
             logger.info(f"Seite {page_num} von '{base_name}.pdf' erfolgreich verarbeitet.")
         return pages_text
     except Exception as e:
-        logger.exception(f"Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten:")
+        logger.exception(f"Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
         return None
 
 
@@ -58,7 +58,7 @@ def doctr_process_pdf(pdf_path: str) -> List[str] | None:
     try:
         return doctr_pdf_to_text(pdf_path)
     except Exception as e:
-        logger.exception(f"Fehler bei Doctr OCR für '{pdf_path}':")
+        logger.exception(f"Fehler bei Doctr OCR für '{pdf_path}': {e}")
         return None
 
 # Adapter for paddleocr_pdf_to_text to match expected signature
@@ -67,7 +67,7 @@ def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
         # paddleocr_pdf_to_text expects a PNG path, but our pipeline expects a PDF path
         return paddleocr_pdf_to_text(pdf_path)
     except Exception as e:
-        logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}':")
+        logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}': {e}")
         return None
 
 _OCR_ENGINE_PDF_MAP: Dict[str, Callable[[str], List[str] | None]] = {
@@ -116,7 +116,7 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
 
     llm_output = ollama_extract_invoice_fields(final_text_parts)
 
-    full_text_for_verification = "\n".join(final_text_parts)
+    full_text_for_verification = "\n".join(final_text_parts) #todo: consider deleting this line
     corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
 
     final_dict = finalize_extracted_fields(corrected_dict)
