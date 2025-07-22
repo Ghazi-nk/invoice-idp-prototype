@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from typing import Callable, Dict, List, Union, Any, cast
+import time
+from typing import Callable, Dict, List, Union, Any, cast, Tuple
 
 import logging
 
@@ -132,14 +133,20 @@ def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr", include_bbox: bool = Fa
 
 
 
-def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", clean: bool = True, include_bbox: bool = False) -> Dict:
+def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", clean: bool = True, include_bbox: bool = False) -> Tuple[Dict, float, float]:
     """
     Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict.
     
     If include_bbox=True, use standardize_ocr_output to convert bbox data to formatted text.
+    
+    Returns:
+        A tuple containing (extracted_fields, ollama_duration, processing_duration)
     """
+    start_time = time.perf_counter()
+    
     pages_raw_content = ocr_pdf(pdf_path, engine=engine, include_bbox=include_bbox)
     logger.info(f"OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_content)} Seiten gefunden.")
+    print(f"raw ocr text of {engine}: {pages_raw_content}")  # todo: remove debugprint
 
     final_text_parts: List[str] = []
     if include_bbox:
@@ -157,13 +164,14 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
                     # Handle nested list of dictionaries (e.g., from doctr, paddleocr)
                     elif isinstance(page_content, list) and all(isinstance(item, list) for item in page_content if item):
                         formatted_text = standardize_ocr_output(page_content, format_type="formatted_string")
-                        
+                    print(f"standardized text of engine {engine}: {formatted_text}") #todo: remove debugprint
                     if formatted_text and isinstance(formatted_text, str):
                         if clean:
                             formatted_text = preprocess_plain_text_output(formatted_text)
                         final_text_parts.append(formatted_text)
                 except Exception as e:
                     logger.exception(f"Error processing page with bbox data: {e}")
+        print(f"final text of engine {engine}: {final_text_parts}")  # todo: remove debugprint
     else:
         # Handle plain text content
         for page_text in pages_raw_content:
@@ -180,14 +188,17 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
     logger.info(f"Extracted {len(final_text_parts)} pages of text content")
     logger.info(f"Gekürzte Vorschau des Textes: '{(' '.join(final_text_parts))[:200]}...'")
 
-    llm_output = ollama_extract_invoice_fields(final_text_parts)
+    # Now ollama_extract_invoice_fields returns a tuple (fields, ollama_duration)
+    llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts)
 
     full_text_for_verification = "\n".join(final_text_parts)
     corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
 
     final_dict = finalize_extracted_fields(corrected_dict)
+    
+    processing_duration = time.perf_counter() - start_time - ollama_duration
 
-    return final_dict
+    return final_dict, ollama_duration, processing_duration
 
 
 def get_available_engines() -> List[str]:
