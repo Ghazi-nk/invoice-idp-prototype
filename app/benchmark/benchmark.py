@@ -35,7 +35,7 @@ if OLLAMA_MODEL is None:
     print("Error: OLLAMA_MODEL is not set.", file=sys.stderr)
     sys.exit(1)
 
-NUM_WORKERS = 2
+NUM_WORKERS = 3
 MODEL_SAFE = OLLAMA_MODEL.replace(":", "_")
 BENCHMARK_DIR = Path(__file__).parent
 OUTPUT_SUMMARY_CSV = str(BENCHMARK_DIR / f"summary_{MODEL_SAFE}.csv")
@@ -51,12 +51,23 @@ def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
     return round(precision, 3), round(recall, 3), round(f1, 3)
 
 
-def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
-    """Processes a single (pdf_path, engine, label_path) task, with searchable flag."""
+def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) -> dict | None:
+    """
+    Processes a single (pdf_path, engine, label_path) task.
+    
+    Args:
+        task_args: Tuple of (pdf_path, engine, label_path)
+        is_searchable: Whether the PDF is searchable
+        use_bbox: Whether to use bounding box information in OCR
+    """
     pdf_path, engine, label_path = task_args
     base_name = pdf_path.stem
 
-    print(f"  Processing '{base_name}.pdf' with '{engine}' (searchable={is_searchable})...")
+    engine_name = engine
+    if use_bbox:
+        engine_name = f"{engine}_with_bbox"
+    
+    print(f"  Processing '{base_name}.pdf' with '{engine_name}' (searchable={is_searchable})...")
     try:
         start_time = time.perf_counter()
         with open(label_path, encoding="utf-8") as f:
@@ -73,12 +84,15 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
             pred = extract_invoice_fields_from_pdf(
                 pdf_path=str(pdf_path),
                 engine=engine,
-                clean=True
+                clean=True,
+                include_bbox=use_bbox
             )
         duration = round(time.perf_counter() - start_time, 3)
 
         fields = list(gt.keys())
-        summary_row = {"invoice": base_name, "pipeline": engine, "duration": duration, "searchable": is_searchable}
+        summary_row = {"invoice": base_name, "pipeline": engine_name, 
+                      "duration": duration, "searchable": is_searchable,
+                      "with_bbox": use_bbox}
         detail_rows = []
         correct = tp = fp = fn = 0
 
@@ -95,8 +109,9 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
                 if pred_has: fp += 1
 
             detail_rows.append({
-                "invoice": base_name, "pipeline": engine, "field": fld,
-                "expected": gt.get(fld), "predicted": pred.get(fld), "match": int(match), "searchable": is_searchable
+                "invoice": base_name, "pipeline": engine_name, "field": fld,
+                "expected": gt.get(fld), "predicted": pred.get(fld), "match": int(match), 
+                "searchable": is_searchable, "with_bbox": use_bbox
             })
 
         summary_row["accuracy"] = round(correct / len(fields), 3)
@@ -106,11 +121,11 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
         # --- NEW: Check business rule acceptance ---
         summary_row["acceptance"] = int(check_acceptance(gt, pred))
 
-        print(f"  ✓ Finished '{base_name}.pdf' with '{engine}' in {duration}s.")
+        print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {duration}s.")
         return {"summary": summary_row, "details": detail_rows}
 
     except Exception as e:
-        print(f"  ✗ ERROR processing '{base_name}.pdf' with '{engine}': {e}")
+        print(f"  ✗ ERROR processing '{base_name}.pdf' with '{engine_name}': {e}")
         return None
 
 
@@ -187,12 +202,21 @@ def main():
             print(f"  ! Error checking if '{base_name}.pdf' is searchable: {e}")
             is_searchable = False
         pdf_searchable_map[base_name] = is_searchable
+        
         for engine in all_engines:
-            if (base_name, engine) not in completed_work:
-                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable))
+            # Add task without bbox
+            regular_engine_name = engine
+            if (base_name, regular_engine_name) not in completed_work:
+                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable, False))
+            
+            # Add task with bbox
+            bbox_engine_name = f"{engine}_with_bbox"
+            if (base_name, bbox_engine_name) not in completed_work:
+                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable, True))
+                
         # Only add 'searchable' engine if PDF is searchable
         if is_searchable and (base_name, "searchable") not in completed_work:
-            tasks_to_do.append(((pdf_path, "searchable", label_path), True))
+            tasks_to_do.append(((pdf_path, "searchable", label_path), True, False))
 
     if not tasks_to_do:
         print("✓ No new tasks to process. Benchmark is up-to-date.")
@@ -208,9 +232,11 @@ def main():
             with open(first_label_path, encoding="utf-8") as fh:
                 fields = list(json.load(fh).keys())
 
-            # --- Add 'searchable' to the summary header ---
-            header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", "recall", "f1", "acceptance", "duration", "searchable"]
-            header_details = ["invoice", "pipeline", "field", "expected", "predicted", "match", "searchable"]
+            # --- Add 'with_bbox' to the headers ---
+            header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", 
+                             "recall", "f1", "acceptance", "duration", "searchable", "with_bbox"]
+            header_details = ["invoice", "pipeline", "field", "expected", "predicted", 
+                             "match", "searchable", "with_bbox"]
 
             summary_writer = csv.DictWriter(sum_f, fieldnames=header_summary)
             detail_writer = csv.DictWriter(det_f, fieldnames=header_details)
