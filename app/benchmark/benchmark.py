@@ -51,21 +51,18 @@ def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
     return round(precision, 3), round(recall, 3), round(f1, 3)
 
 
-def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) -> dict | None:
+def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
     """
     Processes a single (pdf_path, engine, label_path) task.
     
     Args:
         task_args: Tuple of (pdf_path, engine, label_path)
         is_searchable: Whether the PDF is searchable
-        use_bbox: Whether to use bounding box information in OCR
     """
     pdf_path, engine, label_path = task_args
     base_name = pdf_path.stem
 
     engine_name = engine
-    if use_bbox:
-        engine_name = f"{engine}_with_bbox"
     
     print(f"  Processing '{base_name}.pdf' with '{engine_name}' (searchable={is_searchable})...")
     try:
@@ -85,8 +82,7 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
         else:
             pred, ollama_duration, processing_duration = extract_invoice_fields_from_pdf(
                 pdf_path=str(pdf_path),
-                engine=engine,
-                include_bbox=use_bbox
+                engine=engine
             )
             total_duration = ollama_duration + processing_duration
         
@@ -100,8 +96,7 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
                       "ollama_duration": ollama_duration, 
                       "processing_duration": processing_duration, 
                       "total_duration": total_duration, 
-                      "searchable": is_searchable,
-                      "with_bbox": use_bbox}
+                      "searchable": is_searchable}
         detail_rows = []
         correct = tp = fp = fn = 0
 
@@ -120,7 +115,7 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
             detail_rows.append({
                 "invoice": base_name, "pipeline": engine_name, "field": fld,
                 "expected": gt.get(fld), "predicted": pred.get(fld), "match": int(match), 
-                "searchable": is_searchable, "with_bbox": use_bbox
+                "searchable": is_searchable
             })
 
         summary_row["accuracy"] = round(correct / len(fields), 3)
@@ -232,16 +227,11 @@ def main():
             # Add task without bbox
             regular_engine_name = engine
             if (base_name, regular_engine_name) not in completed_work:
-                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable, False))
-            
-            # Add task with bbox
-            bbox_engine_name = f"{engine}_with_bbox"
-            if (base_name, bbox_engine_name) not in completed_work:
-                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable, True))
+                tasks_to_do.append(((pdf_path, engine, label_path), is_searchable))
                 
         # Only add 'searchable' engine if PDF is searchable
         if is_searchable and (base_name, "searchable") not in completed_work:
-            tasks_to_do.append(((pdf_path, "searchable", label_path), True, False))
+            tasks_to_do.append(((pdf_path, "searchable", label_path), True))
 
     if not tasks_to_do:
         print("✓ No new tasks to process. Benchmark is up-to-date.")
@@ -260,9 +250,9 @@ def main():
             # --- Update header to include the new duration fields ---
             header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", 
                              "recall", "f1", "acceptance", "ollama_duration", 
-                             "processing_duration", "total_duration", "searchable", "with_bbox"]
+                             "processing_duration", "total_duration", "searchable"]
             header_details = ["invoice", "pipeline", "field", "expected", "predicted", 
-                             "match", "searchable", "with_bbox"]
+                             "match", "searchable"]
 
             summary_writer = csv.DictWriter(sum_f, fieldnames=header_summary)
             detail_writer = csv.DictWriter(det_f, fieldnames=header_details)
