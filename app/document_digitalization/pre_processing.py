@@ -123,7 +123,8 @@ def standardize_ocr_output(text_with_bbox: Union[List[Dict[str, Any]], Sequence[
                 if item['text'].strip():  # Skip empty lines
                     x0, y0, x1, y1 = item['bbox']
                     y_center = int((y0 + y1) / 2)
-                    formatted_lines.append(f'[y={y_center}] "{item["text"]}"')
+                    x_center = int((x0 + x1) / 2)
+                    formatted_lines.append(f'[x={x_center} ,y={y_center}] "{item["text"]}"')
             
             return "\n".join(formatted_lines)
         else:
