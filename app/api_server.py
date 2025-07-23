@@ -1,4 +1,4 @@
-
+import logging
 from typing import Optional, List
 
 
@@ -15,7 +15,9 @@ from app.document_processing import (
 from app.document_digitalization.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields, ollama_process_with_custom_prompt
 
-import logging
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("api_server")
 
 # --- API Setup ---
 app = FastAPI(
@@ -26,6 +28,10 @@ app = FastAPI(
 
 DEFAULT_ENGINE = "tesseract"
 
+@app.get("/")
+async def root():
+    """Root endpoint for health checks."""
+    return {"status": "API is running"}
 
 # =============================================================================
 # --- Request Models ---
@@ -253,6 +259,6 @@ def handle_error(e: Exception):
         logger.exception("An unexpected server error occurred:")
         raise HTTPException(status_code=500, detail=f"An unexpected server error occurred: {e}")
 
-# To run this server:
-# 1. Install fastapi and uvicorn: pip install fastapi "uvicorn[standard]"
-# 2. From your project root directory, run: uvicorn app.api_server:app --reload
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
