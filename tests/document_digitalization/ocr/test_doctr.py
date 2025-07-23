@@ -61,76 +61,31 @@ class TestDoctrOCR(unittest.TestCase):
         
         return mock_result
     
-    @patch('app.document_digitalization.doctr_pdf2txt._run_ocr')
-    def test_doctr_pdf_to_text_without_bbox(self, mock_run_ocr):
-        """Test doctr_pdf_to_text without bounding boxes."""
-        # Set up the mock
-        mock_run_ocr.return_value = self.mock_doctr_result
+    @patch('app.document_digitalization.doctr_pdf2txt.ocr_predictor')
+    @patch('app.document_digitalization.doctr_pdf2txt.DocumentFile')
+    def test_doctr_pdf_to_text(self, mock_doc_file, mock_predictor):
+        """Test doctr_pdf_to_text with plain text output."""
+        # Set up the mocks
+        mock_doc_file.from_pdf.return_value = MagicMock()
+        mock_predictor.return_value.return_value = self.mock_doctr_result
         
         # Call the function
-        result = doctr_pdf_to_text(self.sample_pdf, include_bbox=False)
+        result = doctr_pdf_to_text(self.sample_pdf)
         
         # Verify the result
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 1)  # One page
         self.assertIsInstance(result[0], str)
         
-        # Check if the result contains expected formatted text with y-coordinates
+        # Check if the result contains expected text
         page_text = result[0]
-        self.assertIn('[y=', page_text)  # Contains y-coordinates
-        self.assertIn('"Invoice Number:"', page_text)  # Contains merged text
-        self.assertIn('"12345"', page_text)
-        self.assertIn('"Customer: ACME Corp"', page_text)
+        self.assertIn('Invoice Number:', page_text)
+        self.assertIn('12345', page_text)
+        self.assertIn('Customer: ACME Corp', page_text)
         
-        # Verify that _run_ocr was called once with the PDF path
-        mock_run_ocr.assert_called_once_with(self.sample_pdf)
-    
-    @patch('app.document_digitalization.doctr_pdf2txt._run_ocr')
-    def test_doctr_pdf_to_text_with_bbox(self, mock_run_ocr):
-        """Test doctr_pdf_to_text with bounding boxes."""
-        # Set up the mock
-        mock_run_ocr.return_value = self.mock_doctr_result
-        
-        # Call the function
-        result = doctr_pdf_to_text(self.sample_pdf, include_bbox=True)
-        
-        # Verify the result
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 1)  # One page
-        
-        # Check the structure of the first page
-        page_items = result[0]
-        self.assertIsInstance(page_items, list)
-        self.assertTrue(all(isinstance(item, dict) for item in page_items))
-        
-        # Verify the structure of the items
-        for item in page_items:
-            self.assertIn('text', item)
-            self.assertIn('bbox', item)
-            self.assertIsInstance(item['text'], str)
-            self.assertIsInstance(item['bbox'], list)
-            self.assertEqual(len(item['bbox']), 4)  # bbox should be [x0, y0, x1, y1]
-        
-        # Check if contents are as expected
-        self.assertEqual(len(page_items), 3)  # Three text lines
-        self.assertEqual(page_items[0]['text'], "Invoice Number:")
-        self.assertEqual(page_items[1]['text'], "12345")
-        self.assertEqual(page_items[2]['text'], "Customer: ACME Corp")
-        
-        # Verify bounding box coordinates are reasonable
-        for item in page_items:
-            bbox = item['bbox']
-            # Bounding boxes should be within the page dimensions
-            self.assertTrue(0 <= bbox[0] <= 1000)
-            self.assertTrue(0 <= bbox[1] <= 800)
-            self.assertTrue(0 <= bbox[2] <= 1000)
-            self.assertTrue(0 <= bbox[3] <= 800)
-            # Second coordinate should be greater than first
-            self.assertTrue(bbox[2] > bbox[0])
-            self.assertTrue(bbox[3] > bbox[1])
-        
-        # Verify that _run_ocr was called once with the PDF path
-        mock_run_ocr.assert_called_once_with(self.sample_pdf)
+        # Verify that the mocks were called correctly
+        mock_doc_file.from_pdf.assert_called_once_with(self.sample_pdf)
+        mock_predictor.assert_called_once_with(pretrained=True)
     
     def test_real_doctr_execution(self):
         """Test real execution of doctr_pdf_to_text with a real PDF file."""
@@ -138,24 +93,13 @@ class TestDoctrOCR(unittest.TestCase):
         if not os.environ.get('RUN_REAL_DOCTR_TESTS'):
             self.skipTest("Skipping real Doctr test. Set RUN_REAL_DOCTR_TESTS=1 to enable.")
         
-        # Test without bbox
-        text_result = doctr_pdf_to_text(self.sample_pdf, include_bbox=False)
+        # Test with plain text output
+        text_result = doctr_pdf_to_text(self.sample_pdf)
         self.assertIsInstance(text_result, list)
         self.assertGreater(len(text_result), 0)
         for page in text_result:
             self.assertIsInstance(page, str)
             self.assertGreater(len(page), 0)
-        
-        # Test with bbox
-        bbox_result = doctr_pdf_to_text(self.sample_pdf, include_bbox=True)
-        self.assertIsInstance(bbox_result, list)
-        self.assertGreater(len(bbox_result), 0)
-        for page in bbox_result:
-            self.assertIsInstance(page, list)
-            self.assertGreater(len(page), 0)
-            for item in page:
-                self.assertIn('text', item)
-                self.assertIn('bbox', item)
 
 
 if __name__ == "__main__":

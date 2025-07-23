@@ -28,16 +28,16 @@ class TestEasyOCR(unittest.TestCase):
             [[[10, 60], [120, 60], [120, 80], [10, 80]], "Text line 2", 0.90]
         ]
     
-    @patch('app.document_digitalization.easyocr_engine.Reader')
-    def test_easyocr_png_to_text_without_bbox(self, mock_reader_class):
-        """Test easyocr_png_to_text without bounding boxes."""
+    @patch('app.document_digitalization.easyocr_engine.easyocr')
+    def test_easyocr_png_to_text(self, mock_easyocr):
+        """Test easyocr_png_to_text basic functionality."""
         # Set up the mock Reader instance
         mock_reader_instance = MagicMock()
         mock_reader_instance.readtext.return_value = self.mock_reader_output
-        mock_reader_class.return_value = mock_reader_instance
+        mock_easyocr.Reader.return_value = mock_reader_instance
         
         # Call the function
-        result = easyocr_png_to_text(self.sample_png, ['de'], return_bbox=False)
+        result = easyocr_png_to_text(self.sample_png, ['de'])
         
         # Verify the result
         self.assertIsInstance(result, str)
@@ -45,45 +45,7 @@ class TestEasyOCR(unittest.TestCase):
         self.assertIn("Text line 2", result)
         
         # Verify that Reader class was initialized with correct parameters
-        mock_reader_class.assert_called_once_with(['de'], gpu=False)
-        
-        # Verify that readtext was called with the image path
-        mock_reader_instance.readtext.assert_called_once()
-        args = mock_reader_instance.readtext.call_args[0]
-        self.assertEqual(args[0], self.sample_png)
-    
-    @patch('app.document_digitalization.easyocr_engine.Reader')
-    def test_easyocr_png_to_text_with_bbox(self, mock_reader_class):
-        """Test easyocr_png_to_text with bounding boxes."""
-        # Set up the mock Reader instance
-        mock_reader_instance = MagicMock()
-        mock_reader_instance.readtext.return_value = self.mock_reader_output
-        mock_reader_class.return_value = mock_reader_instance
-        
-        # Call the function
-        result = easyocr_png_to_text(self.sample_png, ['de'], return_bbox=True)
-        
-        # Verify the result
-        self.assertIsInstance(result, list)
-        self.assertTrue(all(isinstance(item, dict) for item in result))
-        self.assertEqual(len(result), 2)  # Two lines of text
-        
-        # Verify the structure of the items
-        for item in result:
-            self.assertIn('text', item)
-            self.assertIn('bbox', item)
-            self.assertIsInstance(item['text'], str)
-            self.assertIsInstance(item['bbox'], list)
-            self.assertEqual(len(item['bbox']), 4)  # bbox should be [x0, y0, x1, y1]
-        
-        # Verify the content
-        self.assertEqual(result[0]['text'], "Text line 1")
-        self.assertEqual(result[0]['bbox'], [10, 20, 100, 40])
-        self.assertEqual(result[1]['text'], "Text line 2")
-        self.assertEqual(result[1]['bbox'], [10, 60, 120, 80])
-        
-        # Verify that Reader class was initialized with correct parameters
-        mock_reader_class.assert_called_once_with(['de'], gpu=False)
+        mock_easyocr.Reader.assert_called_once_with(['de'], gpu=False)
         
         # Verify that readtext was called with the image path
         mock_reader_instance.readtext.assert_called_once()
@@ -96,18 +58,10 @@ class TestEasyOCR(unittest.TestCase):
         if not os.environ.get('RUN_REAL_EASYOCR_TESTS'):
             self.skipTest("Skipping real EasyOCR test. Set RUN_REAL_EASYOCR_TESTS=1 to enable.")
         
-        # Test without bbox
-        text_result = easyocr_png_to_text(self.sample_png, ['de'], return_bbox=False)
+        # Test with plain text output
+        text_result = easyocr_png_to_text(self.sample_png, ['de'])
         self.assertIsInstance(text_result, str)
         self.assertGreater(len(text_result), 0)
-        
-        # Test with bbox
-        bbox_result = easyocr_png_to_text(self.sample_png, ['de'], return_bbox=True)
-        self.assertIsInstance(bbox_result, list)
-        self.assertTrue(all(isinstance(item, dict) for item in bbox_result))
-        for item in bbox_result:
-            self.assertIn('text', item)
-            self.assertIn('bbox', item)
 
 
 if __name__ == "__main__":
