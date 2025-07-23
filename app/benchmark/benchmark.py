@@ -12,7 +12,7 @@ import sys
 from app.document_processing import extract_invoice_fields_from_pdf, get_available_engines
 from app.document_digitalization.pdf_utils import extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields
-from app.document_digitalization.pre_processing import preprocess_plain_text_output
+
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
 from app.benchmark.evaluation_utils import is_match, check_acceptance
@@ -76,9 +76,9 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
         if engine == "searchable":
             page_texts = extract_text_if_searchable(str(pdf_path))
             # Clean text if needed
-            final_text_parts = [preprocess_plain_text_output(page) for page in page_texts]
-            llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts)
-            full_text_for_verification = "\n".join(final_text_parts)
+
+            llm_output, ollama_duration = ollama_extract_invoice_fields(page_texts)
+            full_text_for_verification = "\n".join(page_texts)
             pred = finalize_extracted_fields(verify_and_correct_fields(llm_output, full_text_for_verification))
             total_duration = time.perf_counter() - start_time
             processing_duration = total_duration - ollama_duration

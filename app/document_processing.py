@@ -11,7 +11,7 @@ from app.document_digitalization.layoutlmv3_png2txt import layoutlm_image_to_tex
 from app.document_digitalization.tesseract_ocr import tesseract_png_to_text
 from app.document_digitalization.easyocr_engine import easyocr_png_to_text
 from app.document_digitalization.paddle_ocr import paddleocr_pdf_to_text
-from app.document_digitalization.pre_processing import preprocess_plain_text_output, standardize_ocr_output
+from app.document_digitalization.pre_processing import standardize_ocr_output
 
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 from app.config import SAMPLE_PDF_PATH
@@ -166,8 +166,8 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
                         formatted_text = standardize_ocr_output(page_content, format_type="formatted_string")
                     print(f"standardized text of engine {engine}: {formatted_text}") #todo: remove debugprint
                     if formatted_text and isinstance(formatted_text, str):
-                        if clean:
-                            formatted_text = preprocess_plain_text_output(formatted_text)
+                        # if clean:
+                        #     formatted_text = preprocess_plain_text_output(formatted_text)
                         final_text_parts.append(formatted_text)
                 except Exception as e:
                     logger.exception(f"Error processing page with bbox data: {e}")
@@ -177,8 +177,8 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr",
         for page_text in pages_raw_content:
             if page_text and isinstance(page_text, str):
                 text_content = page_text
-                if clean:
-                    text_content = preprocess_plain_text_output(text_content)
+                # if clean:
+                #     text_content = preprocess_plain_text_output(text_content)
                 final_text_parts.append(text_content)
     
     if not final_text_parts:
