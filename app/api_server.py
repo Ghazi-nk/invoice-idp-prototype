@@ -119,11 +119,12 @@ def extract_data(request: BaseRequest) -> InvoiceExtractionResponse:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
 
-            extracted_data = extract_invoice_fields_from_pdf(
+            extracted_data_tuple = extract_invoice_fields_from_pdf(
                 pdf_path=temp_pdf_path,
-                engine=engine_to_use,
-                clean=True
+                engine=engine_to_use
             )
+            # Unpack only the first element (dictionary) from the tuple
+            extracted_data = extracted_data_tuple[0]
             # Map 'ust-id' to 'ust_id' for the model
             if 'ust-id' in extracted_data:
                 extracted_data['ust_id'] = extracted_data.pop('ust-id')

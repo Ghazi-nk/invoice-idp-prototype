@@ -133,7 +133,7 @@ def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr", include_bbox: bool = Fa
 
 
 
-def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", clean: bool = True, include_bbox: bool = False) -> Tuple[Dict, float, float]:
+def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr", include_bbox: bool = False) -> Tuple[Dict, float, float]:
     """
     Full pipeline: PDF ➜ OCR ➜ clean ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict.
     

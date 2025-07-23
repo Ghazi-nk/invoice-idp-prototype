@@ -46,7 +46,7 @@ class TestDocumentProcessing(unittest.TestCase):
         mock_finalize_fields.return_value = {"invoice_id": "INV-123", "total_amount": 150.00, "corrected": True}
 
         # --- Act: Rufe die zu testende Funktion auf ---
-        result = document_processing.extract_invoice_fields_from_pdf(pdf_path, engine=engine, clean=True)
+        result = document_processing.extract_invoice_fields_from_pdf(pdf_path, engine=engine)
 
         # --- Assert: Überprüfe, ob alles wie erwartet abgelaufen ist ---
         # Wurde die OCR-Funktion korrekt aufgerufen?
@@ -98,7 +98,7 @@ class TestDocumentProcessing(unittest.TestCase):
         mock_ocr_pdf.return_value = ["Raw text page 1.", "Raw text page 2."]
 
         # --- Act ---
-        document_processing.extract_invoice_fields_from_pdf(pdf_path, clean=False)
+        document_processing.extract_invoice_fields_from_pdf(pdf_path)
 
         # --- Assert ---
         # Stelle sicher, dass die Bereinigungsfunktion NICHT aufgerufen wurde

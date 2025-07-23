@@ -40,7 +40,7 @@ class TestApiServer(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         # New response model: {'data': {...}}
         self.assertEqual(response.json(), {"data": {"total_amount": 123.45, "vendor_name": "TestCorp"}})
-        mock_extract.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract", clean=True)
+        mock_extract.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract")
 
     @patch('app.api_server.extract_invoice_fields_from_pdf')
     @patch('app.api_server.get_available_engines', return_value=['tesseract'])
@@ -58,7 +58,7 @@ class TestApiServer(unittest.TestCase):
 
         # Assert
         # Check that the call was made with the default engine, 'tesseract'
-        mock_extract.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract", clean=True)
+        mock_extract.assert_called_once_with(pdf_path="/tmp/fake.pdf", engine="tesseract")
 
     # --- Tests for /api/v1/ocr ---
 
