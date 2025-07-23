@@ -10,7 +10,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from app.document_digitalization.paddle_ocr import paddleocr_pdf_to_text
+from app.ocr.paddle_ocr import paddleocr_pdf_to_text
 
 
 class TestPaddleOCR(unittest.TestCase):

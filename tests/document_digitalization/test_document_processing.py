@@ -9,8 +9,8 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from app.document_processing import extract_invoice_fields_from_pdf, ocr_pdf, process_pdf_with_ocr
-
+from app.pipeline import extract_invoice_fields_from_pdf
+from app.ocr.ocr_manager import ocr_pdf, process_pdf_with_ocr
 
 class TestDocumentProcessing(unittest.TestCase):
 

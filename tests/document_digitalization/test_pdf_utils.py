@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock, mock_open, ANY
 
 # Der zu testende Code
 # Annahme: Der Code befindet sich in einer Datei namens pdf_utils.py
-from document_digitalization import pdf_utils
+from app.ocr import pdf_utils
 
 # Definieren einer Dummy-Konstante, damit der Test ohne die echte config.py läuft
 pdf_utils.TMP_DIR = "/tmp"
