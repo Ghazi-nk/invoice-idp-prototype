@@ -14,46 +14,36 @@ from app.config import (
     SYSTEM_PROMPT_FILE,
     USER_PROMPT_FILE,
     PDF_QUERY_SYSTEM_PROMPT,
-    PDF_QUERY_USER_PROMPT,
-    EXTRACT_BBOX_SYSTEM_PROMPT,
-    EXTRACT_BBOX_USER_PROMPT
+    PDF_QUERY_USER_PROMPT
 )
 
 
-def ollama_extract_invoice_fields(ocr_pages: List[str], include_bbox: bool = False) -> Tuple[Dict, float]:
+def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
     """
-    Extracts invoice fields by sending OCR text to an LLM, using a prompt strategy
-    based on the type of OCR data provided.
+    Extracts invoice fields by sending OCR text to an LLM.
     
     Args:
         ocr_pages: List of strings containing OCR text from each page
-        include_bbox: Whether the input contains formatted bbox information
     
     Returns:
         A tuple containing (extracted_fields, ollama_duration)
     """
-    # 1. Load the appropriate prompt files based on whether include_bbox is enabled
+    # Load standard prompts for regular text extraction
     try:
-        if include_bbox:
-            # Use bbox-specific prompts when bbox data is included
-            system_prompt = Path(EXTRACT_BBOX_SYSTEM_PROMPT).read_text(encoding="utf-8")
-            user_prompt = Path(EXTRACT_BBOX_USER_PROMPT).read_text(encoding="utf-8")
-        else:
-            # Use standard prompts for regular text extraction
-            if SYSTEM_PROMPT_FILE is None or USER_PROMPT_FILE is None:
-                raise FileNotFoundError("Required prompt files are not set in environment variables.")
-            
-            system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
-            user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
+        if SYSTEM_PROMPT_FILE is None or USER_PROMPT_FILE is None:
+            raise FileNotFoundError("Required prompt files are not set in environment variables.")
+        
+        system_prompt = Path(SYSTEM_PROMPT_FILE).read_text(encoding="utf-8")
+        user_prompt = Path(USER_PROMPT_FILE).read_text(encoding="utf-8")
     except FileNotFoundError as e:
         raise RuntimeError(f"Could not find a required prompt file: {e}")
 
-    # 2. Build the initial message list with the system prompt.
+    # Build the initial message list with the system prompt
     messages = [
         {"role": "system", "content": system_prompt.strip()}
     ]
 
-    # 3. Add each page's text as a separate user message.
+    # Add each page's text as a separate user message
     if not ocr_pages:
         raise ValueError("Input ocr_pages list cannot be empty.")
 
@@ -62,10 +52,10 @@ def ollama_extract_invoice_fields(ocr_pages: List[str], include_bbox: bool = Fal
         message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
         messages.append({"role": "user", "content": message_content})
 
-    # 4. Add the final user prompt to trigger the JSON generation.
+    # Add the final user prompt to trigger the JSON generation
     messages.append({"role": "user", "content": user_prompt.strip()})
 
-    # 5. Send the complete conversation to the chat endpoint.
+    # Send the complete conversation to the chat endpoint
     body = {"model": OLLAMA_MODEL, "messages": messages, "stream": False}
 
     # Suppress warnings
@@ -79,7 +69,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str], include_bbox: bool = Fal
     if resp.status_code != 200:
         raise RuntimeError(f"Ollama API Error: {resp.status_code} – {resp.text}")
 
-    # 6. Extract the JSON from the final assistant message.
+    # Extract the JSON from the final assistant message
     try:
         raw_content = resp.json().get("message", {}).get("content", "")
     except (AttributeError, KeyError):
@@ -91,7 +81,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str], include_bbox: bool = Fal
     if not json_chunk:
         raise ValueError("Could not find a complete JSON object in Ollama response:\n" + raw_content[:500])
 
-    # The {{...}} regex patch is no longer the primary method, but can serve as a fallback.
+    # The {{...}} regex patch is no longer the primary method, but can serve as a fallback
     json_chunk = re.sub(r'^\{\{(.*)\}\}$', r'{\1}', json_chunk, count=1, flags=re.DOTALL)
 
     try:
