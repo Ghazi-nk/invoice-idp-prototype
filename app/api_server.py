@@ -7,12 +7,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 # --- Main pipeline functions ---
-from app.document_processing import (
-    extract_invoice_fields_from_pdf,
-    get_available_engines,
-    ocr_pdf
-)
-from app.document_digitalization.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
+from app.pipeline import extract_invoice_fields_from_pdf
+
+from app.ocr.ocr_manager import ocr_pdf, get_available_engines
+from app.ocr.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields, ollama_process_with_custom_prompt
 
 # Setup logging
