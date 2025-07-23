@@ -9,8 +9,9 @@ import statistics
 import sys
 
 
-from app.document_processing import extract_invoice_fields_from_pdf, get_available_engines
-from app.document_digitalization.pdf_utils import extract_text_if_searchable
+from app.pipeline import extract_invoice_fields_from_pdf
+from app.ocr.ocr_manager import get_available_engines
+from app.ocr.pdf_utils import extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields
 
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
