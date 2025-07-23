@@ -43,8 +43,8 @@ class TestLayoutLMOCR(unittest.TestCase):
             {"text": "Customer ACME Corp", "bbox": [100, 100, 350, 120]}
         ]
     
-    @patch('app.document_digitalization.layoutlmv3_png2txt.Image')
-    @patch('app.document_digitalization.layoutlmv3_png2txt._PROCESSOR')
+    @patch('app.ocr.layoutlmv3_png2txt.Image')
+    @patch('app.ocr.layoutlmv3_png2txt._PROCESSOR')
     def test_layoutlm_image_to_text(self, mock_processor, mock_image_class):
         """Test layoutlm_image_to_text with plain text output."""
         # Set up mocks
@@ -71,7 +71,7 @@ class TestLayoutLMOCR(unittest.TestCase):
         mock_processor.return_value = mock_inputs
         
         # Patch the token conversion
-        with patch('app.document_digitalization.layoutlmv3_png2txt._PROCESSOR.tokenizer.convert_ids_to_tokens') as mock_convert:
+        with patch('app.ocr.layoutlmv3_png2txt._PROCESSOR.tokenizer.convert_ids_to_tokens') as mock_convert:
             mock_convert.side_effect = lambda x: {
                 101: "[CLS]",
                 1996: "Invoice",

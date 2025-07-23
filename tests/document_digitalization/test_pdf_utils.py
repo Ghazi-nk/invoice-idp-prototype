@@ -17,10 +17,10 @@ class TestPdfUtils(unittest.TestCase):
 
     # --- Tests für save_base64_to_temp_pdf ---
 
-    @patch('utils.pdf_utils.os.remove')
-    @patch('utils.pdf_utils.os.path.exists', return_value=True)
-    @patch('utils.pdf_utils.tempfile.NamedTemporaryFile')
-    @patch('utils.pdf_utils.base64.b64decode')
+    @patch('app.ocr.pdf_utils.os.remove')
+    @patch('app.ocr.pdf_utils.os.path.exists', return_value=True)
+    @patch('app.ocr.pdf_utils.tempfile.NamedTemporaryFile')
+    @patch('app.ocr.pdf_utils.base64.b64decode')
     def test_save_base64_to_temp_pdf_success(self, mock_b64decode, mock_tempfile, mock_exists, mock_remove):
         """
         Testet das erfolgreiche Dekodieren und Speichern von Base64 in einer temporären Datei.
@@ -68,7 +68,7 @@ class TestPdfUtils(unittest.TestCase):
 
     # --- Tests für pdf_to_png_with_pymupdf ---
 
-    @patch('utils.pdf_utils.fitz.open')
+    @patch('app.ocr.pdf_utils.fitz.open')
     def test_pdf_to_png_with_pymupdf_success(self, mock_fitz_open):
         """
         Testet die erfolgreiche Konvertierung von PDF zu PNG mit PyMuPDF.
@@ -116,7 +116,7 @@ class TestPdfUtils(unittest.TestCase):
         # Prüfe das Ergebnis mit den korrekt erstellten Pfaden
         self.assertEqual(result_paths, [expected_path1, expected_path2])
 
-    @patch('utils.pdf_utils.fitz.open')
+    @patch('app.ocr.pdf_utils.fitz.open')
     def test_pdf_to_png_with_pymupdf_empty_pdf(self, mock_fitz_open):
         """
         Testet, ob ein Fehler ausgelöst wird, wenn das PDF keine Seiten hat.
@@ -132,7 +132,7 @@ class TestPdfUtils(unittest.TestCase):
 
     # --- Tests für extract_text_if_searchable ---
 
-    @patch('utils.pdf_utils.fitz.open')
+    @patch('app.ocr.pdf_utils.fitz.open')
     def test_extract_text_if_searchable_with_text(self, mock_fitz_open):
         """
         Testet die Extraktion, wenn das PDF durchsuchbaren Text enthält.
@@ -157,18 +157,11 @@ class TestPdfUtils(unittest.TestCase):
         mock_page1.get_text.assert_called_once()
         mock_page2.get_text.assert_called_once()
 
-        # Baue den erwarteten Pfad OS-unabhängig zusammen
-        expected_text_path = os.path.join("/tmp", "searchable.txt")
+        # Die Funktion gibt eine Liste von Seiten-Texten zurück
+        expected_result = ["Text von Seite 1.", "Text von Seite 2."]
+        self.assertEqual(result, expected_result)
 
-        # Prüfe den Aufruf mit dem korrekt erstellten Pfad
-        m_open.assert_called_once_with(expected_text_path, "w", encoding="utf-8")
-
-        expected_text = "Text von Seite 1.\nText von Seite 2."
-        m_open().write.assert_called_once_with(expected_text)
-
-        self.assertEqual(result, json.dumps(expected_text, ensure_ascii=False))
-
-    @patch('utils.pdf_utils.fitz.open')
+    @patch('app.ocr.pdf_utils.fitz.open')
     def test_extract_text_if_searchable_image_pdf(self, mock_fitz_open):
         """
         Testet das Verhalten, wenn das PDF keinen extrahierbaren Text hat (Bild-PDF).
@@ -189,7 +182,7 @@ class TestPdfUtils(unittest.TestCase):
         # --- Assert ---
         mock_page.get_text.assert_called_once()
         m_open.assert_not_called()
-        self.assertEqual(result, "")
+        self.assertEqual(result, [""])
 
 
 if __name__ == '__main__':

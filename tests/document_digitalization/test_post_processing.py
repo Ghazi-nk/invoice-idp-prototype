@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch, call
 
 # Der zu testende Code
-from post_processing import post_processing
+from app.post_processing import post_processing
 
 
 class TestVerifyAndCorrectFields(unittest.TestCase):
@@ -60,7 +60,7 @@ class TestFinalizeExtractedFields(unittest.TestCase):
     """
 
     # Assuming canon_money is in the post_processing file for this example
-    @patch('utils.post_processing.canon_money')
+    @patch('app.post_processing.canon_money')
     def test_finalizes_total_amount(self, mock_canon_money):
         """Sollte `canon_money` für total_amount aufrufen."""
         mock_canon_money.return_value = 123.45
@@ -69,7 +69,7 @@ class TestFinalizeExtractedFields(unittest.TestCase):
         mock_canon_money.assert_called_once_with("123,45 EUR")
         self.assertEqual(result["total_amount"], 123.45)
 
-    @patch('utils.post_processing.canon_money')
+    @patch('app.post_processing.canon_money')
     def test_finalizes_both_fields(self, mock_canon_money):
         """Sollte `canon_money` für beide Felder aufrufen, wenn vorhanden."""
         mock_canon_money.side_effect = [150.00, 7.0]
