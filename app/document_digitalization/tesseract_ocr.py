@@ -1,10 +1,7 @@
-import os
-import sys
 import logging
 from typing import List, Dict, Any, Union
-import tempfile
 
-from pytesseract import image_to_string, image_to_boxes, image_to_data
+from pytesseract import image_to_string, image_to_data
 
 from app.config import SAMPLE_PNG_PATH
 
@@ -30,7 +27,7 @@ def tesseract_png_to_text(png_path: str, return_bbox: bool = False) -> Union[str
     
     try:
         # Get text directly from pytesseract
-        raw_text = image_to_string(png_path, lang='deu', config='--psm 6')
+        raw_text = image_to_string(png_path, lang='deu', config='--psm 3')
         logger.debug(f"Extracted {len(raw_text)} characters with Tesseract")
         
         if return_bbox:
