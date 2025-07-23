@@ -18,18 +18,15 @@ logger = logging.getLogger("layoutlmv3_png2txt")
 _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-large")
 
 
-def layoutlm_image_to_text(image_path: str, include_bbox: bool = False) -> Union[str, List[Dict[str, Any]]]:
+def layoutlm_image_to_text(image_path: str) -> str:
     """
     Extrahiert Text aus einem Bild mit LayoutLMv3.
     
     Args:
         image_path: Pfad zur Bilddatei
-        include_bbox: Wenn True, werden strukturierte Daten mit Bounding-Box-Koordinaten zurückgegeben
-                      Wenn False, wird reiner Text ohne Koordinaten zurückgegeben
     
     Returns:
-        Bei include_bbox=False: String mit reinem Text
-        Bei include_bbox=True: Liste von Dictionaries mit 'text' und 'bbox' Keys
+        String mit reinem Text
     """
     try:
         # 1. Bild laden und mit LayoutLM verarbeiten
@@ -70,7 +67,7 @@ def layoutlm_image_to_text(image_path: str, include_bbox: bool = False) -> Union
         # Falls keine Tokens extrahiert werden konnten
         if not tokens:
             logger.warning(f"Keine Tokens für {image_path} extrahiert")
-            return "" if not include_bbox else []
+            return ""
         
         # 3. Tokens nach Zeilen gruppieren
         lines_dict = {}
@@ -132,10 +129,10 @@ def layoutlm_image_to_text(image_path: str, include_bbox: bool = False) -> Union
         for chunk in text_chunks:
             # Token-Texte zu vollständigem Text zusammenfügen
             raw_text = "".join(t["text"] for t in chunk)
-            
+
             # Text bereinigen
             text = re.sub(r"\s+", " ", raw_text.replace("Ġ", " ")).strip()
-            
+
             # Leere Chunks überspringen
             if not text:
                 continue
@@ -148,16 +145,11 @@ def layoutlm_image_to_text(image_path: str, include_bbox: bool = False) -> Union
             
             text_objects.append({"text": text, "bbox": bbox})
         
-        # 7. Ausgabeformat erzeugen
-        if include_bbox:
-            # Strukturierte Daten mit Bounding-Boxen zurückgeben
-            return [{'text': obj["text"], 'bbox': obj["bbox"]} for obj in text_objects]
-        else:
-            # Reiner Text ohne Koordinaten zurückgeben
-            # Text-Chunks nach vertikaler Position sortieren und zusammenfügen
-            sorted_objects = sorted(text_objects, key=lambda obj: (obj["bbox"][1] + obj["bbox"][3]) / 2)
-            plain_text = "\n".join(obj["text"] for obj in sorted_objects)
-            return plain_text
+        # Reiner Text ohne Koordinaten zurückgeben
+        # Text-Chunks nach vertikaler Position sortieren und zusammenfügen
+        sorted_objects = sorted(text_objects, key=lambda obj: (obj["bbox"][1] + obj["bbox"][3]) / 2)
+        plain_text = "\n".join(obj["text"] for obj in sorted_objects)
+        return plain_text
             
     except Exception as e:
         logger.exception(f"LayoutLM OCR fehlgeschlagen für '{image_path}':")
