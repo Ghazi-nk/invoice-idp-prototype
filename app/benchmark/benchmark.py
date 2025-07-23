@@ -86,7 +86,6 @@ def process_task(task_args: tuple, is_searchable: bool, use_bbox: bool = False) 
             pred, ollama_duration, processing_duration = extract_invoice_fields_from_pdf(
                 pdf_path=str(pdf_path),
                 engine=engine,
-                clean=True,
                 include_bbox=use_bbox
             )
             total_duration = ollama_duration + processing_duration
