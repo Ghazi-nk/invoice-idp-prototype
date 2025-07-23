@@ -61,8 +61,8 @@ class TestDoctrOCR(unittest.TestCase):
         
         return mock_result
     
-    @patch('app.document_digitalization.doctr_pdf2txt.ocr_predictor')
-    @patch('app.document_digitalization.doctr_pdf2txt.DocumentFile')
+    @patch('app.ocr.doctr_pdf2txt.ocr_predictor')
+    @patch('app.ocr.doctr_pdf2txt.DocumentFile')
     def test_doctr_pdf_to_text(self, mock_doc_file, mock_predictor):
         """Test doctr_pdf_to_text with plain text output."""
         # Set up the mocks

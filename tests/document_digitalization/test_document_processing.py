@@ -15,10 +15,10 @@ from app.ocr.ocr_manager import ocr_pdf, process_pdf_with_ocr
 class TestDocumentProcessing(unittest.TestCase):
 
     # 1. Test für die Haupt-Pipeline-Funktion
-    @patch('app.document_processing.finalize_extracted_fields')
-    @patch('app.document_processing.verify_and_correct_fields')
-    @patch('app.document_processing.ollama_extract_invoice_fields')
-    @patch('app.document_processing.ocr_pdf')
+    @patch('app.post_processing.finalize_extracted_fields')
+    @patch('app.post_processing.verify_and_correct_fields')
+    @patch('app.semantic_extraction.ollama_extract_invoice_fields')
+    @patch('app.ocr.ocr_manager.ocr_pdf')
     def test_extract_invoice_fields_from_pdf_full_pipeline(
             self,
             mock_ocr_pdf,
@@ -82,7 +82,7 @@ class TestDocumentProcessing(unittest.TestCase):
         self.assertIn("Unsupported OCR engine", str(context.exception))
 
     # 3. Test der allgemeinen OCR-Verarbeitungsfunktion
-    @patch('app.document_processing.pdf_to_png_with_pymupdf')
+    @patch('app.ocr.pdf_utils.pdf_to_png_with_pymupdf')
     def test_process_pdf_with_ocr(self, mock_pdf_to_png):
         """Testet die Logik von process_pdf_with_ocr in Isolation."""
         # --- Arrange ---
@@ -109,7 +109,7 @@ class TestDocumentProcessing(unittest.TestCase):
         self.assertEqual(result, ["Text from page 1", "Text from page 2"])
 
     # 4. Test für den Fehlerfall in der OCR-Verarbeitung
-    @patch('app.document_processing.pdf_to_png_with_pymupdf')
+    @patch('app.ocr.pdf_utils.pdf_to_png_with_pymupdf')
     def test_process_pdf_with_ocr_handles_exception(self, mock_pdf_to_png):
         """Testet, ob Fehler bei der Verarbeitung korrekt abgefangen werden."""
         # --- Arrange ---

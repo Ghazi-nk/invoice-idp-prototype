@@ -21,7 +21,7 @@ class TestTesseractOCR(unittest.TestCase):
         self.sample_png = str(Path(project_root) / "resources" / "samples" / "BRE-03.png")
         self.assertTrue(os.path.exists(self.sample_png), f"Test file not found: {self.sample_png}")
     
-    @patch('app.document_digitalization.tesseract_ocr.image_to_string')
+    @patch('app.ocr.tesseract_ocr.image_to_string')
     def test_tesseract_png_to_text(self, mock_image_to_string):
         """Test tesseract_png_to_text functionality."""
         # Mock pytesseract's image_to_string to return predictable output

@@ -28,7 +28,7 @@ class TestEasyOCR(unittest.TestCase):
             [[[10, 60], [120, 60], [120, 80], [10, 80]], "Text line 2", 0.90]
         ]
     
-    @patch('app.document_digitalization.easyocr_engine.easyocr')
+    @patch('app.ocr.easyocr_engine.easyocr')
     def test_easyocr_png_to_text(self, mock_easyocr):
         """Test easyocr_png_to_text basic functionality."""
         # Set up the mock Reader instance

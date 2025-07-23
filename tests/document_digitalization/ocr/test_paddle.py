@@ -43,16 +43,26 @@ class TestPaddleOCR(unittest.TestCase):
             ]
         ]
     
-    @patch('app.document_digitalization.paddle_ocr.PaddleOCR')
+    @patch('app.ocr.paddle_ocr.PaddleOCR')
     def test_paddleocr_pdf_to_text(self, mock_paddleocr_class):
         """Test paddleocr_pdf_to_text with plain text output."""
         # Set up mocks
         mock_paddleocr_instance = MagicMock()
-        mock_paddleocr_instance.predict.return_value = self.mock_paddle_result
+        mock_paddleocr_instance.ocr.side_effect = [
+            # Page 1 result
+            [[[[100, 20], [400, 20], [400, 40], [100, 40]], ("Invoice", 0.95)],
+             [[[100, 50], [400, 50], [400, 70], [100, 70]], ("12345", 0.90)]],
+            # Page 2 result
+            [[[[100, 20], [450, 20], [450, 40], [100, 40]], ("Customer: ACME Corp", 0.95)]]
+        ]
         mock_paddleocr_class.return_value = mock_paddleocr_instance
         
-        # Call the function
-        result = paddleocr_pdf_to_text(self.sample_pdf, lang='german')
+        # Mock pdf_to_png_with_pymupdf to return image paths
+        with patch('app.ocr.paddle_ocr.pdf_to_png_with_pymupdf') as mock_pdf_to_png:
+            mock_pdf_to_png.return_value = ["/tmp/page_0.png", "/tmp/page_1.png"]
+            
+            # Call the function
+            result = paddleocr_pdf_to_text(self.sample_pdf, lang='german')
         
         # Verify the result
         self.assertIsInstance(result, list)

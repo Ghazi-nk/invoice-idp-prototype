@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 
 # Der zu testende Code
 # Annahme: Der Code befindet sich in einer Datei namens semantic_extraction.py
-import semantic_extraction as llm_utils
+import app.semantic_extraction as llm_utils
 
 
 class TestExtractFirstCompleteJson(unittest.TestCase):
@@ -55,8 +55,8 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
     # Mock für `requests.post` und `pathlib.Path`
     # Der `create=True` Parameter bei `patch` erlaubt das Mocken von Objekten,
     # die innerhalb der Funktion importiert werden (z.B. requests in deinem Code)
-    @patch('llm_utils.requests.post')
-    @patch('llm_utils.Path')
+    @patch('app.semantic_extraction.requests.post')
+    @patch('app.semantic_extraction.Path')
     def test_successful_extraction(self, mock_path, mock_post):
         """Testet den erfolgreichen Ende-zu-Ende-Durchlauf."""
         # --- Arrange: Lege das Verhalten der Mocks fest ---
@@ -66,12 +66,15 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
         mock_user_prompt = "Extrahiere die Felder."
 
         # Simuliere, dass `read_text` je nach aufgerufener Datei etwas anderes zurückgibt
-        # Wir müssen den mock_open Helfer verwenden, da der Code `Path(...).read_text()` aufruft
-        mock_file_content = {
-            llm_utils.SYSTEM_PROMPT_FILE: mock_system_prompt,
-            llm_utils.USER_PROMPT_FILE: mock_user_prompt,
-        }
-        mock_path.return_value.read_text.side_effect = lambda encoding: mock_file_content[str(mock_path.return_value)]
+        def mock_read_text(encoding="utf-8"):
+            path_str = str(mock_path.call_args[0][0]) if mock_path.call_args else ""
+            if llm_utils.SYSTEM_PROMPT_FILE in path_str:
+                return mock_system_prompt
+            elif llm_utils.USER_PROMPT_FILE in path_str:
+                return mock_user_prompt
+            return "default_prompt"
+        
+        mock_path.return_value.read_text.side_effect = mock_read_text
 
         # 2. Mock für die API-Antwort von requests.post
         mock_response = MagicMock()
@@ -110,7 +113,7 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Input ocr_pages list cannot be empty"):
             llm_utils.ollama_extract_invoice_fields([])
 
-    @patch('llm_utils.Path')
+    @patch('app.semantic_extraction.Path')
     def test_raises_error_if_prompt_file_not_found(self, mock_path):
         """Sollte einen RuntimeError auslösen, wenn eine Prompt-Datei fehlt."""
         # Simuliere, dass beim Lesen der Datei ein Fehler auftritt
@@ -119,8 +122,8 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Could not find a required prompt file"):
             llm_utils.ollama_extract_invoice_fields(["some text"])
 
-    @patch('llm_utils.requests.post')
-    @patch('llm_utils.Path')
+    @patch('app.semantic_extraction.requests.post')
+    @patch('app.semantic_extraction.Path')
     def test_raises_error_on_api_failure(self, mock_path, mock_post):
         """Sollte einen RuntimeError bei einem API-Fehler (Status != 200) auslösen."""
         # Arrange
@@ -134,8 +137,8 @@ class TestOllamaExtractInvoiceFields(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Ollama API Error: 500 – Internal Server Error"):
             llm_utils.ollama_extract_invoice_fields(["some text"])
 
-    @patch('llm_utils.requests.post')
-    @patch('llm_utils.Path')
+    @patch('app.semantic_extraction.requests.post')
+    @patch('app.semantic_extraction.Path')
     def test_raises_error_when_no_json_in_response(self, mock_path, mock_post):
         """Sollte einen ValueError auslösen, wenn die API-Antwort kein JSON enthält."""
         # Arrange
