@@ -175,8 +175,8 @@ def get_ocr_engines() -> List[str]:
     """
     return get_available_engines()
 
-@app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=TextResponse)
-def extract_searchable_text(request: BaseRequest) -> TextResponse:
+@app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=OCRTextResponse)
+def extract_searchable_text(request: BaseRequest) -> OCRTextResponse:
     """
     Extracts all searchable text from a PDF (no OCR). Returns as a single string.
     """
@@ -186,14 +186,12 @@ def extract_searchable_text(request: BaseRequest) -> TextResponse:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
             text_json = extract_text_if_searchable(temp_pdf_path)
             if not text_json:
-                text_json = "pdf is not searchable or no text found."
-            # text_json is a JSON string, so parse it
-            import json
-            text = json.loads(text_json) if text_json and isinstance(text_json, (str, bytes, bytearray)) else ""
-            return TextResponse(result=text)
+                text_json = ["pdf is not searchable or no text found."]
+                
+            return OCRTextResponse(ocr_text=text_json)
     except Exception as e:
         handle_error(e)
-        return TextResponse(result="")
+        return OCRTextResponse(ocr_text=[""])
 
 @app.post("/api/v1/llm-invoice-extract", summary="LLM-based Field Extraction", response_model=InvoiceExtractionResponse)
 def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
