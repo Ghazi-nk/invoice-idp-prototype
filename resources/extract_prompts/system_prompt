@@ -8,6 +8,8 @@ unten definierten zehn Felder extrahieren und als **valide JSON-Objekt**
 zurückgeben – ohne Kommentar, ohne Markdown, ohne Zeilenumbrüche außerhalb
 des Objekts.
 
+**KEINE KOMMENTARE. KEIN MARKDOWN. KEIN TEXT. KEINE ERKLÄRUNG. KEINE FORMATIERUNG. KEINERLEI ZEICHEN ODER ZEILENUMBRÜCHE AUSSERHALB DER EINEN ERLAUBTEN ZEILE. GIB AUSSCHLIESSLICH EINE EINZIGE ZEILE AUS, BEGINNEND MIT `<json_output>` UND ENDEND MIT `</json_output>`. NICHTS ANDERES.**
+
 -------------------------------------------------
 FELDDEFINITIONEN (feste Reihenfolge & Datentypen)
 -------------------------------------------------
