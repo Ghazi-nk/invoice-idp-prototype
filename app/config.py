@@ -19,8 +19,6 @@ RESOURCES_DIR = PROJECT_ROOT / 'resources'
 EXTRACT_PROMPTS_DIR = RESOURCES_DIR / 'extract_prompts'
 EXTRACT_SYSTEM_PROMPT = str(EXTRACT_PROMPTS_DIR / 'system_prompt')
 EXTRACT_USER_PROMPT = str(EXTRACT_PROMPTS_DIR / 'user_prompt')
-EXTRACT_BBOX_SYSTEM_PROMPT = str(EXTRACT_PROMPTS_DIR / 'bbox_system_prompt')
-EXTRACT_BBOX_USER_PROMPT = str(EXTRACT_PROMPTS_DIR / 'bbox_user_prompt')
 
 # PDF Query prompts (for pdf-query endpoint)
 PDF_QUERY_PROMPTS_DIR = RESOURCES_DIR / 'pdf_query_prompts'
@@ -81,7 +79,7 @@ for var_name, value in critical_vars.items():
         sys.exit(1)
 
 # Check that prompt files exist
-for prompt_file in [EXTRACT_SYSTEM_PROMPT, EXTRACT_USER_PROMPT, EXTRACT_BBOX_SYSTEM_PROMPT, EXTRACT_BBOX_USER_PROMPT, PDF_QUERY_SYSTEM_PROMPT, PDF_QUERY_USER_PROMPT]:
+for prompt_file in [EXTRACT_SYSTEM_PROMPT, EXTRACT_USER_PROMPT, PDF_QUERY_SYSTEM_PROMPT, PDF_QUERY_USER_PROMPT]:
     if not os.path.exists(prompt_file):
         print(f"Warning: Prompt file not found at {prompt_file}", file=sys.stderr)
 

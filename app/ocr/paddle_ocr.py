@@ -15,26 +15,26 @@ logger = logging.getLogger("paddle_ocr")
 def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
     """
     Extracts text from each page of a PDF using PaddleOCR.
-    
+
     Args:
         pdf_path: Path to the PDF file
         lang: Language for PaddleOCR
-    
+
     Returns:
         List of text strings (one per page)
     """
     if PaddleOCR is None:
         logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
         raise ImportError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
-    
+
     # Initialize OCR
     ocr = PaddleOCR(use_angle_cls=False, lang=lang)
     results = ocr.predict(pdf_path) or []
     logger.info(f"PaddleOCR detected content across {len(results)} pages")
-    
+
     # Extract text
     page_texts = []
-    
+
     # Handle OCRResult objects
     for page_idx, page_result in enumerate(results):
         # Handle paddlex.inference.pipelines.ocr.result.OCRResult objects
@@ -48,30 +48,19 @@ def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
                     data_dict = page_result
                     if isinstance(page_result, object) and hasattr(page_result, 'get'):
                         data_dict = {k: page_result.get(k) for k in ['rec_texts', 'rec_boxes']}
-                    
+
                     texts = data_dict.get('rec_texts', [])
                     boxes = data_dict.get('rec_boxes', [])
-                    
-                # Try to access as object attributes
-                elif hasattr(page_result, 'rec_texts') and hasattr(page_result, 'rec_boxes'):
-                    texts = getattr(page_result, 'rec_texts', [])
-                    boxes = getattr(page_result, 'rec_boxes', [])
-                
-                # Try to access via __dict__
-                elif hasattr(page_result, '__dict__'):
-                    obj_dict = page_result.__dict__
-                    texts = obj_dict.get('rec_texts', [])
-                    boxes = obj_dict.get('rec_boxes', [])
-                
+
                 # If we found texts
                 if 'texts' in locals() and len(texts) > 0:
                     # Join texts for this page
                     page_text = "\n".join(str(t) for t in texts if t is not None)
                     page_texts.append(page_text)
-            
+
             except Exception as e:
                 logger.exception(f"Error processing OCRResult for page {page_idx+1}: {e}")
-    
+
     return page_texts
 
 
