@@ -3,7 +3,6 @@
 import base64
 import tempfile
 from contextlib import contextmanager
-from pdf2image import convert_from_path
 import os
 import json
 import fitz
@@ -52,29 +51,6 @@ def encode_image_to_base64(image_path: str) -> str:
         logger.exception(f"Failed to encode image to base64: {image_path}")
         raise
 
-# ... (The rest of your existing functions remain unchanged) ...
-
-def pdf_to_png_multiple(pdf_path: str, dpi: int = 300) -> list[str]:
-    """
-    Converts a PDF to multiple PNG images (one per page) using pdf2image.
-    Logs errors if conversion fails.
-    """
-    try:
-        pages = convert_from_path(pdf_path, dpi=dpi)
-        if not pages:
-            logger.error(f"Keine Seiten in PDF: {pdf_path}")
-            raise RuntimeError(f"Keine Seiten in PDF: {pdf_path}")
-        png_paths = []
-        base = os.path.splitext(os.path.basename(pdf_path))[0]
-        for i, img in enumerate(pages):
-            img = img.convert("RGB")
-            png_path = os.path.join(TMP_DIR, f"{base}_page{i + 1}.png")
-            img.save(png_path, "PNG")
-            png_paths.append(png_path)
-        return png_paths
-    except Exception as e:
-        logger.exception(f"Failed to convert PDF to PNGs: {pdf_path}")
-        raise
 
 def extract_text_if_searchable(pdf_path: str) -> list[str]:
     """
