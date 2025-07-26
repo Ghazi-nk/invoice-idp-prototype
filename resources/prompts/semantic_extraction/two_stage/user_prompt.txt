@@ -1,0 +1,6 @@
+Basierend auf dem bereitgestellten Text, extrahiere bitte den angeforderten Wert.
+
+Denke daran:
+- NUR der Wert selbst, keine Erklärung
+- Wenn nicht gefunden: "null"
+- Exakte Extraktion ohne Interpretation
