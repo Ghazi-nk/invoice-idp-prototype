@@ -61,6 +61,13 @@ SAMPLE_PDF_PATH = os.getenv("SAMPLE_PDF_PATH")
 SAMPLE_PNG_PATH = os.getenv("SAMPLE_PNG_PATH")
 
 # =============================================================================
+# --- Two Stage Strategy Configuration ---
+# =============================================================================
+stage_1_prompt_system = os.getenv("STAGE_1_PROMPT_SYSTEM")
+stage_1_prompt_user = os.getenv("STAGE_1_PROMPT_USER")
+stage_2_prompt_system = os.getenv("STAGE_2_PROMPT_SYSTEM")
+stage_2_prompt_user = os.getenv("STAGE_2_PROMPT_USER")
+# =============================================================================
 # --- Critical Configuration Validation ---
 # =============================================================================
 critical_vars = {
