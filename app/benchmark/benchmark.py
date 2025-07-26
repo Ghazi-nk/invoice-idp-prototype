@@ -9,10 +9,10 @@ import statistics
 import sys
 
 
-from app.pipeline import extract_invoice_fields_from_pdf
-from app.ocr.ocr_manager import get_available_engines
+from app.ocr.ocr_manager import ocr_pdf, get_available_engines
 from app.ocr.pdf_utils import extract_text_if_searchable
-from app.semantic_extraction import ollama_extract_invoice_fields
+from semantic_extraction_strategies.semantic_extraction import ollama_extract_invoice_fields
+from app.semantic_extraction_strategies.two_stage_strategy import ollama_extract_invoice_fields as two_stage_extract
 
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
@@ -36,12 +36,56 @@ if OLLAMA_MODEL is None:
     print("Error: OLLAMA_MODEL is not set.", file=sys.stderr)
     sys.exit(1)
 
-NUM_WORKERS = 3
+NUM_WORKERS = 2
 MODEL_SAFE = OLLAMA_MODEL.replace(":", "_")
 BENCHMARK_DIR = Path(__file__).parent
-OUTPUT_SUMMARY_CSV = str(BENCHMARK_DIR / f"summary_{MODEL_SAFE}.csv")
-OUTPUT_DETAIL_CSV = str(BENCHMARK_DIR / f"details_{MODEL_SAFE}.csv")
-OUTPUT_RESULTS_CSV = str(BENCHMARK_DIR / f"results_{MODEL_SAFE}.csv")
+
+# Strategy configuration - set which strategy to use
+STRATEGY_MODE = os.getenv("BENCHMARK_STRATEGY", "two_stage")  # "original" or "two_stage"
+STRATEGY_MAPPING = {
+    "original": {"func": ollama_extract_invoice_fields, "abbrev": "org"},
+    "two_stage": {"func": two_stage_extract, "abbrev": "tstg"}
+}
+
+if STRATEGY_MODE not in STRATEGY_MAPPING:
+    print(f"Error: Invalid BENCHMARK_STRATEGY '{STRATEGY_MODE}'. Must be 'original' or 'two_stage'.", file=sys.stderr)
+    sys.exit(1)
+
+strategy_abbrev = STRATEGY_MAPPING[STRATEGY_MODE]["abbrev"]
+OUTPUT_SUMMARY_CSV = str(BENCHMARK_DIR / f"{strategy_abbrev}_summary_{MODEL_SAFE}.csv")
+OUTPUT_DETAIL_CSV = str(BENCHMARK_DIR / f"{strategy_abbrev}_details_{MODEL_SAFE}.csv")
+OUTPUT_RESULTS_CSV = str(BENCHMARK_DIR / f"{strategy_abbrev}_results_{MODEL_SAFE}.csv")
+
+
+def benchmark_extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "tesseract") -> tuple[dict, float, float]:
+    """
+    Benchmark-specific pipeline that uses the selected strategy.
+    
+    Args:
+        pdf_path: Path to the PDF file to process
+        engine: OCR engine to use
+    
+    Returns:
+        A tuple containing (extracted_fields, ollama_duration, processing_duration)
+    """
+    start_time = time.perf_counter()
+    
+    pages_raw_content = ocr_pdf(pdf_path, engine=engine)
+    
+    if not pages_raw_content:
+        raise ValueError("No text content was extracted from the PDF.")
+        
+    # Use the selected strategy
+    strategy_func = STRATEGY_MAPPING[STRATEGY_MODE]["func"]
+    llm_output, ollama_duration = strategy_func(pages_raw_content)
+
+    full_text_for_verification = "\n".join(pages_raw_content)
+    corrected_dict = verify_and_correct_fields(llm_output, full_text_for_verification)
+    final_dict = finalize_extracted_fields(corrected_dict)
+    
+    processing_duration = time.perf_counter() - start_time - ollama_duration
+
+    return final_dict, ollama_duration, processing_duration
 
 
 def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
@@ -75,13 +119,15 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
             page_texts = extract_text_if_searchable(str(pdf_path))
             # Clean text if needed
 
-            llm_output, ollama_duration = ollama_extract_invoice_fields(page_texts)
+            # Use the selected strategy
+            strategy_func = STRATEGY_MAPPING[STRATEGY_MODE]["func"]
+            llm_output, ollama_duration = strategy_func(page_texts)
             full_text_for_verification = "\n".join(page_texts)
             pred = finalize_extracted_fields(verify_and_correct_fields(llm_output, full_text_for_verification))
             total_duration = time.perf_counter() - start_time
             processing_duration = total_duration - ollama_duration
         else:
-            pred, ollama_duration, processing_duration = extract_invoice_fields_from_pdf(
+            pred, ollama_duration, processing_duration = benchmark_extract_invoice_fields_from_pdf(
                 pdf_path=str(pdf_path),
                 engine=engine
             )
@@ -238,6 +284,8 @@ def main():
         print("✓ No new tasks to process. Benchmark is up-to-date.")
     else:
         print(f"Created {len(tasks_to_do)} new tasks to process.")
+        print(f"Using semantic extraction strategy: {STRATEGY_MODE} (abbrev: {strategy_abbrev})")
+        print(f"Output files will use prefix: {strategy_abbrev}_")
         summary_exists = os.path.exists(OUTPUT_SUMMARY_CSV)
         details_exists = os.path.exists(OUTPUT_DETAIL_CSV)
 
