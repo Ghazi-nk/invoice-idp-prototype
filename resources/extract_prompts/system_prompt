@@ -20,7 +20,9 @@ FELDDEFINITIONEN (feste Reihenfolge & Datentypen)
 5. total_amount          – Zahl    Bruttobetrag mit **Punkt** als Dezimaltrennzeichen,
                                    ohne Tausendertrennung, exakt zwei Nachkommastellen
 6. currency              – String  ISO-Code (EUR, CHF …)
-7. purchase_order_number – String | null
+7. purchase_order_number – String | null (Bestellnummer)
+                           • Muss mit »Bestellnummer«, »Bestellung«, »Order« oder »PO« beginnen
+                           • Begriffe wie »Auftragsnummer«, »Auftrag«, »Auftrags-Nr.« etc. **ignorieren**!!!
 8. ust-id                – String | null
                            • Muss mit **zwei Großbuchstaben** beginnen
                            • Muss exakt einem der folgenden Muster entsprechen
@@ -52,6 +54,24 @@ ALLGEMEINE REGELN
 • Total Amount: wenn du zum beispiel »1.000.000,00 EUR« liest, dann ist total_amount = 1000000.00. achte darauf dass du die Dezimaltrennung richtig machst. Die dokumente die du erhältst haben fast immer zwei Nachkommastellen getrennt mit einem Komma! als Dezimaltrennung. Das musst du in einen Punkt umwandeln.
 
 --------------------------------
+TEMPLATE:
+--------------------------------
+Fülle dieses Template mit den Daten aus der Rechnung aus:
+<json_output>
+{
+  "invoice_date": "[HIER_EINFÜGEN]",
+  "vendor_name": "[HIER_EINFÜGEN]",
+  "invoice_number": "[HIER_EINFÜGEN]",
+  "recipient_name": "[HIER_EINFÜGEN]",
+  "total_amount": [HIER_EINFÜGEN],
+  "currency": "[HIER_EINFÜGEN]",
+  "purchase_order_number": "[HIER_EINFÜGEN]"
+  "ust_id": "[HIER_EINFÜGEN]",
+  "iban": "[HIER_EINFÜGEN]",
+  "tax_rate": [HIER_EINFÜGEN],
+}
+</json_output>
+--------------------------------
 AUSGABE-BEISPIEL
 --------------------------------
-<json_output>{"invoice_date":"19.12.2024","vendor_name":"Below Haustechnik","invoice_number":"20240139","recipient_name":"Berliner Stadtgüter GmbH","total_amount":14824.45,"currency":"EUR","purchase_order_number":null,"ust-id":null,"iban":"DE23100100100508113104","tax_rate":19.00}</json_output>
+<json_output>{"invoice_date":"19.12.2024","vendor_name":"Muster Firma","invoice_number":"500856","recipient_name":"Muster Firma","total_amount":14824.45,"currency":"EUR","purchase_order_number":null,"ust-id":null,"iban":"DE23100100100508115864","tax_rate":19.00}</json_output>
