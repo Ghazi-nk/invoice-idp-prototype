@@ -2,7 +2,7 @@ import re
 import unicodedata
 from typing import Dict
 
-from app.post_processing import canon_money
+from app.post_processing import canon_number
 
 
 def canon_text(s: str | None) -> str:
@@ -59,7 +59,7 @@ def is_match(field: str, true_val, pred_val) -> bool:
     if field in NAME_KEYS:
         return is_name_match(true_val, pred_val)
 
-    if field in MONEY_KEYS: return canon_money(true_val) == canon_money(pred_val)
+    if field in MONEY_KEYS: return canon_number(true_val) == canon_number(pred_val)
     if field in ID_KEYS: return _canon_id(true_val) == _canon_id(pred_val)
     return canon_text(true_val) == canon_text(pred_val)
 
