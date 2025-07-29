@@ -1,6 +1,3 @@
-############################
-###        USER          ###
-############################
 ### Aufgabe
 Extrahiere aus dem folgenden OCR-Rohtext **exakt** die zehn
 definierten Felder und gib sie als JSON-Objekt zurück.
@@ -13,6 +10,3 @@ definierten Felder und gib sie als JSON-Objekt zurück.
 5. USt-Id muss **mit zwei Buchstaben beginnen** und exakt den EU-Muster-Regexen entsprechen;
    sonst `null` (Steuernummern ignorieren).
 6. Ergebnis **ausschließlich** in einer Zeile zwischen `<json_output>`-Tags – ohne weiteren Text.
-
-### OCR-Text
-```plaintext
