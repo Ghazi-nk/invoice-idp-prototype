@@ -12,11 +12,14 @@ from typing import Dict, Any, List
 UST_ID_PATTERNS: List[re.Pattern] = [
     re.compile(r'\b(DE[0-9]{9})\b', re.IGNORECASE),
     re.compile(r'\b(ATU[0-9]{8})\b', re.IGNORECASE),
+    re.compile(r'\b(DE[0-9]{8})\b', re.IGNORECASE),
 ]
 
 # KORREKTUR: The pattern now includes `\s` to allow for spaces within the IBAN.
-IBAN_PATTERN: re.Pattern = re.compile(r'\b([A-Z]{2}[0-9]{2}[\sA-Z0-9]{11,30})\b', re.IGNORECASE)
-
+IBAN_PATTERN: re.Pattern = re.compile(
+    r'\b([A-Z]{2}\d{2}(?:\s?[A-Z0-9]){11,30}?)(?=\b)',
+    re.IGNORECASE
+)
 
 def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str, Any]:
     """
@@ -26,24 +29,38 @@ def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str,
     if not isinstance(data, dict):
         return data
 
+    # get iban and ust-id from data
+    iban = (data.get('iban') or '').strip()
+    ust_id = (data.get('ust_id') or '').strip()
+
     # --- Verify and Correct IBAN ---
-    iban_match = IBAN_PATTERN.search(full_text)
-    if iban_match:
-        # This sub removes the spaces after they have been successfully matched.
-        corrected_iban = re.sub(r'\s+', '', iban_match.group(1).upper())
-        if data.get('iban') != corrected_iban:
-            print(f"[Info] Post-processing: Corrected IBAN to '{corrected_iban}'.")
-        data['iban'] = corrected_iban
+    #verfiy that iban is not empty and fits the iban pattern
+    if not iban or not re.match(IBAN_PATTERN, iban):
+        print(f"[Info] Post-processing: IBAN '{iban}' is invalid or empty, checking full text for correction.")
+        iban_match = IBAN_PATTERN.search(full_text)
+        if iban_match:
+            raw = iban_match.group(1).upper()
+            corrected = re.sub(r'\s+', '', raw)
+            if data.get('iban') != corrected:
+                print(f"[Info] Post-processing: Corrected IBAN to '{corrected}'.")
+            data['iban'] = corrected
+    else:
+        print(f"[Info] Post-processing: IBAN '{iban}' is valid.")
 
     # --- Verify and Correct USt-Id ---
-    for pattern in UST_ID_PATTERNS:
-        ust_id_match = pattern.search(full_text)
-        if ust_id_match:
-            corrected_ust_id = ust_id_match.group(1).upper()
-            if data.get('ust-id') != corrected_ust_id:
-                 print(f"[Info] Post-processing: Corrected USt-Id to '{corrected_ust_id}'.")
-            data['ust-id'] = corrected_ust_id
-            break
+    # Check if USt-Id is empty or does not match any pattern
+    if not ust_id or not any(pattern.search(ust_id) for pattern in UST_ID_PATTERNS):
+        print(f"[Info] Post-processing: USt-Id '{ust_id}' is invalid or empty, checking full text for correction.")
+        for pattern in UST_ID_PATTERNS:
+            ust_id_match = pattern.search(full_text)
+            if ust_id_match:
+                corrected_ust_id = ust_id_match.group(1).upper()
+                if data.get('ust-id') != corrected_ust_id:
+                     print(f"[Info] Post-processing: Corrected USt-Id to '{corrected_ust_id}'.")
+                data['ust-id'] = corrected_ust_id
+                break
+    else:
+        print(f"[Info] Post-processing: USt-Id '{ust_id}' is valid.")
 
     return data
 
