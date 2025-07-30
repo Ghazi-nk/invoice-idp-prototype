@@ -1,17 +1,17 @@
 # helper dependencies
-Pillow~=11.3.0
-numpy<2.0
+pillow==11.3.0
+numpy==2.2.6
 pymupdf==1.26.3
-pydantic~=2.11.7
+pydantic==2.11.7
 python-dotenv==1.1.1
 
-fastapi~=0.116.1
+fastapi==0.116.1
 
 requests==2.32.4
 # ocrs
 easyocr==1.7.2
 
-python-doctr~=0.8.11
+python-doctr==1.0.0
 
 transformers==4.54.1
 
