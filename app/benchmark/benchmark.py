@@ -12,7 +12,7 @@ import sys
 from app.pipeline import extract_invoice_fields_from_pdf
 from app.ocr.ocr_manager import get_available_engines
 from app.ocr.pdf_utils import extract_text_if_searchable
-from semantic_extraction_strategies.semantic_extraction import ollama_extract_invoice_fields
+from semantic_extraction import ollama_extract_invoice_fields
 
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
