@@ -1,11 +1,7 @@
 import sys
 import logging
 from typing import List, Dict, Any, Union, cast
-
-try:
-    import easyocr
-except ImportError:
-    easyocr = None
+import easyocr
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -22,11 +18,6 @@ def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
     Returns:
         OCR text as a string
     """
-    try:
-        import easyocr
-    except ImportError:
-        logger.error("EasyOCR is not installed. Please install with `pip install easyocr torch`.")
-        raise RuntimeError("EasyOCR is not installed. Please install with `pip install easyocr torch`.")
     
     reader = easyocr.Reader(languages, gpu=False)
     # EasyOCR returns: [[bbox, text, confidence], ...]
