@@ -39,64 +39,59 @@ CHAT_ENDPOINT = f"{OLLAMA_BASE_URL}/api/chat" if OLLAMA_BASE_URL else None
 # =============================================================================
 # --- File storage paths ---
 # =============================================================================
-INPUT_DIR = os.getenv("INPUT_DIR")
-OUTPUT_DIR = os.getenv("OUTPUT_DIR")
-TMP_DIR = os.getenv("TMP_DIR")
-
-# =============================================================================
-# --- OCR Configuration ---
-# =============================================================================
-TESSERACT_CMD = os.getenv("TESSERACT_CMD")
+# Temporary directory for processing
+TMP_DIR = str(PROJECT_ROOT / 'app' / 'results' / 'tmp')
 
 # =============================================================================
 # --- Benchmark Configuration ---
 # =============================================================================
-LABELS_DIR = os.getenv("LABELS_DIR")
-INVOICES_DIR = os.getenv("INVOICES_DIR")
+# Benchmark data directories
+LABELS_DIR = str(RESOURCES_DIR / 'GroundTruth')
+INVOICES_DIR = str(RESOURCES_DIR / 'Inovices')
 
 # =============================================================================
 # --- Sample files for testing ---
 # =============================================================================
-SAMPLE_PDF_PATH = os.getenv("SAMPLE_PDF_PATH")
-SAMPLE_PNG_PATH = os.getenv("SAMPLE_PNG_PATH")
+# Sample files for development and testing
+SAMPLES_DIR = RESOURCES_DIR / 'samples'
+SAMPLE_PDF_PATH = str(SAMPLES_DIR / 'BMRE-01.pdf')
+SAMPLE_PNG_PATH = str(SAMPLES_DIR / 'BRE-03.png')
+# =============================================================================
+# --- Directory Creation ---
+# =============================================================================
+# Ensure required directories exist
+Path(TMP_DIR).mkdir(parents=True, exist_ok=True)
 
-# =============================================================================
-# --- Two Stage Strategy Configuration ---
-# =============================================================================
-stage_1_prompt_system = os.getenv("STAGE_1_PROMPT_SYSTEM")
-stage_1_prompt_user = os.getenv("STAGE_1_PROMPT_USER")
-stage_2_prompt_system = os.getenv("STAGE_2_PROMPT_SYSTEM")
-stage_2_prompt_user = os.getenv("STAGE_2_PROMPT_USER")
 # =============================================================================
 # --- Critical Configuration Validation ---
 # =============================================================================
 critical_vars = {
     "OLLAMA_BASE_URL": OLLAMA_BASE_URL,
     "OLLAMA_MODEL": OLLAMA_MODEL,
-    "CHAT_ENDPOINT": CHAT_ENDPOINT,
-    "INPUT_DIR": INPUT_DIR,
-    "OUTPUT_DIR": OUTPUT_DIR,
-    "TMP_DIR": TMP_DIR,
-    "TESSERACT_CMD": TESSERACT_CMD
 }
 
 for var_name, value in critical_vars.items():
     if not value:
         print(f"Error: Critical configuration variable {var_name} is not set.", file=sys.stderr)
+        print(f"Please set {var_name} in your .env file or environment variables.", file=sys.stderr)
         sys.exit(1)
+
+# Validate CHAT_ENDPOINT after OLLAMA_BASE_URL validation
+if not CHAT_ENDPOINT:
+    print("Error: Could not construct CHAT_ENDPOINT from OLLAMA_BASE_URL.", file=sys.stderr)
+    sys.exit(1)
 
 # Check that prompt files exist
 for prompt_file in [EXTRACT_SYSTEM_PROMPT, EXTRACT_USER_PROMPT, PDF_QUERY_SYSTEM_PROMPT, PDF_QUERY_USER_PROMPT]:
     if not os.path.exists(prompt_file):
         print(f"Warning: Prompt file not found at {prompt_file}", file=sys.stderr)
 
-# Optional variables used for benchmarking and demos
-optional_vars = {
-    "SAMPLE_PDF_PATH": SAMPLE_PDF_PATH,
-    "LABELS_DIR": LABELS_DIR,
-    "INVOICES_DIR": INVOICES_DIR
-}
-
-for var_name, value in optional_vars.items():
-    if not value:
-        print(f"Warning: Optional variable {var_name} is not set. Some functionality may be limited.", file=sys.stderr)
+# Validation for benchmark and sample files
+if not Path(LABELS_DIR).exists():
+    print(f"Warning: Labels directory not found at {LABELS_DIR}. Benchmark functionality may be limited.", file=sys.stderr)
+if not Path(INVOICES_DIR).exists():
+    print(f"Warning: Invoices directory not found at {INVOICES_DIR}. Benchmark functionality may be limited.", file=sys.stderr)
+if not Path(SAMPLE_PDF_PATH).exists():
+    print(f"Warning: Sample PDF not found at {SAMPLE_PDF_PATH}. Some testing functionality may be limited.", file=sys.stderr)
+if not Path(SAMPLE_PNG_PATH).exists():
+    print(f"Warning: Sample PNG not found at {SAMPLE_PNG_PATH}. Some testing functionality may be limited.", file=sys.stderr)
