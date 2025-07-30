@@ -9,7 +9,7 @@ import logging
 from app.ocr.ocr_manager import ocr_pdf
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 from app.config import SAMPLE_PDF_PATH
-from semantic_extraction import ollama_extract_invoice_fields
+from app.semantic_extraction import ollama_extract_invoice_fields
 
 
 # Setup logging
