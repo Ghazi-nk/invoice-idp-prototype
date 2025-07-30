@@ -20,7 +20,7 @@
       "type": "string",
       "description": "Name of the invoice recipient (used for company code enrichment)"
     },
-    "gross_amount": {
+    "total_amount": {
       "type": "number",
       "description": "Total amount including taxes"
     },
@@ -33,7 +33,7 @@
       "type": "string",
       "description": "Reference to the related purchase order"
     },
-    "tax_id": {
+    "ust-id": {
       "type": "string",
       "description": "Tax number or VAT ID of the vendor"
     },
