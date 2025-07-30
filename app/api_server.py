@@ -199,13 +199,28 @@ def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
     Runs LLM-based field extraction on provided OCR text pages. Returns extracted invoice fields.
     """
     try:
-        extracted_data = ollama_extract_invoice_fields(request.ocr_pages)
+        extracted_data_tuple = ollama_extract_invoice_fields(request.ocr_pages)
+        logger.info(f"Extracted data tuple type: {type(extracted_data_tuple)}")
+        logger.info(f"Extracted data tuple length: {len(extracted_data_tuple) if hasattr(extracted_data_tuple, '__len__') else 'N/A'}")
+        
+        # Unpack the tuple to get just the dictionary (ignore the duration)
+        extracted_data, duration = extracted_data_tuple
+        logger.info(f"Extracted data type: {type(extracted_data)}")
+        logger.info(f"Extracted data content: {extracted_data}")
+        
+        # Ensure extracted_data is a dictionary
+        if not isinstance(extracted_data, dict):
+            logger.error(f"Expected dict, got {type(extracted_data)}: {extracted_data}")
+            raise ValueError(f"Expected dictionary from LLM extraction, got {type(extracted_data)}")
+        
         # Map 'ust-id' to 'ust_id' for the model if needed
         if 'ust-id' in extracted_data:
             extracted_data['ust_id'] = extracted_data.pop('ust-id')
+        
         return InvoiceExtractionResponse(**extracted_data)
     except Exception as e:
-        handle_error(e)
+        logger.exception("Error in llm_extract endpoint:")
+        # Return a default response instead of raising an exception
         return InvoiceExtractionResponse(
             invoice_date="",
             vendor_name="",
