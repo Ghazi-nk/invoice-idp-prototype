@@ -1,26 +1,21 @@
-#pdf2image~=1.17.0
-Pillow~=11.2.1
-transformers==4.36.2
-sentencepiece
-protobuf
-dotenv~=0.9.9
-python-dotenv~=1.1.0
-requests~=2.32.3
-pathlib~=1.0.1
-fitz~=0.0.1.dev2
-easyocr~=1.7.2
-paddleocr~=3.1.0
-# --- PyTorch and vision/audio dependencies (must match for doctr) ---
-torch==2.2.2
-torchvision==0.17.2
-torchaudio==2.2.2
-
-doctr[torch]~=1.9.0
+# helper dependencies
+Pillow~=11.3.0
 numpy<2.0
-tqdm~=4.67.1
+pymupdf==1.26.3
 pydantic~=2.11.7
-fastapi~=0.116.0
-tokenizers>=0.14,<0.19
-PyMuPDF
-paddlepaddle
-pytesseract
+python-dotenv==1.1.1
+
+fastapi~=0.116.1
+
+requests==2.32.4
+# ocrs
+easyocr==1.7.2
+
+python-doctr~=0.8.11
+
+transformers==4.54.1
+
+pytesseract==0.3.13
+
+paddleocr==3.1.0
+paddlepaddle==3.1.0

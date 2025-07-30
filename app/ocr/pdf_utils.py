@@ -1,12 +1,12 @@
 # FILE: utils/pdf_utils.py
 
 import base64
+import logging
+import os
 import tempfile
 from contextlib import contextmanager
-import os
-import json
+
 import fitz
-import logging
 
 from app.config import TMP_DIR
 

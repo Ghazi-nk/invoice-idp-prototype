@@ -1,12 +1,10 @@
-import sys
 import logging
-from typing import List, Dict, Any, Union
+import sys
+from typing import List
 
-try:
-    from paddleocr import PaddleOCR
-except ImportError:
-    PaddleOCR = None
+from paddleocr import PaddleOCR
 
+#todo: debug empty extracted text with paddleocr
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("paddle_ocr")

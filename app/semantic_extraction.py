@@ -3,7 +3,7 @@ import re
 import time
 import warnings
 from pathlib import Path
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Tuple
 
 import requests
 

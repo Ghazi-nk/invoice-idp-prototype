@@ -1,7 +1,6 @@
 import logging
-from typing import List, Dict, Any, Union
 
-from pytesseract import image_to_string, image_to_data
+from pytesseract import image_to_string
 
 from app.config import SAMPLE_PNG_PATH
 
