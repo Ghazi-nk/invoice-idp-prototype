@@ -1,3 +1,12 @@
+############################
+###        USER          ###
+############################
+
+WARNUNG: Wenn der Text "Muster", "Test" oder "Example" enthält, ignoriere diese und suche die ECHTEN Rechnungsdaten!
+
+KRITISCH: 
+- vendor_name = Wer STELLT die Rechnung aus (Absender/Logo oben)
+- recipient_name = Wer ERHÄLT die Rechnung (Empfänger im Adressfeld)
 ### Aufgabe
 Extrahiere aus dem folgenden OCR-Rohtext **exakt** die zehn
 definierten Felder und gib sie als JSON-Objekt zurück.
@@ -6,7 +15,7 @@ definierten Felder und gib sie als JSON-Objekt zurück.
 1. Fehlende Werte → `null`, keine leeren Strings.
 2. total_amount & tax_rate = Zahl mit **Punkt**, zwei Nachkommastellen, keine Tausendertrennung.
 3. Nur die zehn Schlüssel in genau dieser Reihenfolge.
-4. IBAN = erste **[A-Z]{2}[0-9A-Z]{13,32}** nach »IBAN« oder »Konto«.
+4. IBAN = internationale Bankkontonummer nach »IBAN« oder »Konto«.
 5. USt-Id muss **mit zwei Buchstaben beginnen** und exakt den EU-Muster-Regexen entsprechen;
    sonst `null` (Steuernummern ignorieren).
 6. Ergebnis **ausschließlich** in einer Zeile zwischen `<json_output>`-Tags – ohne weiteren Text.
