@@ -17,7 +17,7 @@ from app.semantic_extraction import ollama_extract_invoice_fields
 
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
-from app.benchmark.evaluation_utils import is_match, check_acceptance
+from app.benchmark.evaluation_utils import is_match, check_success
 
 
 def get_pdf_page_count(pdf_path: str) -> int:
@@ -141,7 +141,8 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
         summary_row.update(precision=prec, recall=rec, f1=f1)
 
         # --- NEW: Check business rule success ---
-        summary_row["success"] = int(check_acceptance(gt, pred))
+        summary_row["success"] = int(check_success(gt, pred))
+        summary_row["success"] = int(check_success(gt, pred))
 
         print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {total_duration}s.")
         return {"summary": summary_row, "details": detail_rows}
