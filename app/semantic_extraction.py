@@ -48,9 +48,29 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
         raise ValueError("Input ocr_pages list cannot be empty.")
 
     num_pages = len(ocr_pages)
-    for i, page_text in enumerate(ocr_pages):
-        message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
-        messages.append({"role": "user", "content": message_content})
+    
+    # For large documents (>3 pages), combine text and truncate to avoid confusion
+    if num_pages > 3:
+        print(f"[Info] Large document detected ({num_pages} pages). Optimizing for LLM processing...")
+        # For very large documents, focus on first and last pages which usually contain key info
+        if num_pages > 6:
+            # Take first 2 pages and last page
+            key_pages = ocr_pages[:2] + [ocr_pages[-1]]
+            combined_text = "\n\n=== PAGE BREAK ===\n\n".join(key_pages)
+            messages.append({"role": "user", "content": f"Here is the invoice text (pages 1-2 and {num_pages} of {num_pages}):\n\n---\n{combined_text}\n---"})
+        else:
+            # For 4-6 pages, combine all but truncate middle if too long
+            combined_text = "\n\n=== PAGE BREAK ===\n\n".join(ocr_pages)
+            if len(combined_text) > 6000:
+                truncated = combined_text[:3500] + "\n\n[... middle content truncated ...]\n\n" + combined_text[-2500:]
+                messages.append({"role": "user", "content": f"Here is the invoice text (truncated from {num_pages} pages):\n\n---\n{truncated}\n---"})
+            else:
+                messages.append({"role": "user", "content": f"Here is the complete invoice text ({num_pages} pages combined):\n\n---\n{combined_text}\n---"})
+    else:
+        # For smaller documents, keep the original page-by-page approach
+        for i, page_text in enumerate(ocr_pages):
+            message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
+            messages.append({"role": "user", "content": message_content})
 
     # Add the final user prompt to trigger the JSON generation
     messages.append({"role": "user", "content": user_prompt.strip()})

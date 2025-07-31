@@ -32,7 +32,6 @@ def process_invoice(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, 
     
     pages_raw_content = ocr_pdf(pdf_path, engine=engine)
     logger.info(f"OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_content)} Seiten gefunden.")
-    print(f"raw ocr text of {engine}: {pages_raw_content}")  # todo: remove debugprint
 
     # Handle plain text content directly
     final_text_parts = []
