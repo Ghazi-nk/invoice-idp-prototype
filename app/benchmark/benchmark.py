@@ -7,6 +7,7 @@ import multiprocessing
 import collections
 import statistics
 import sys
+import fitz
 
 
 from app.pipeline import extract_invoice_fields_from_pdf
@@ -17,6 +18,18 @@ from app.semantic_extraction import ollama_extract_invoice_fields
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 
 from app.benchmark.evaluation_utils import is_match, check_acceptance
+
+
+def get_pdf_page_count(pdf_path: str) -> int:
+    """Get the number of pages in a PDF file."""
+    try:
+        doc = fitz.open(pdf_path)
+        page_count = doc.page_count
+        doc.close()
+        return page_count
+    except Exception as e:
+        print(f"Error getting page count for {pdf_path}: {e}")
+        return 0
 
 # --- Configuration for benchmark ---
 from app.config import (
@@ -92,11 +105,15 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
         processing_duration = round(processing_duration, 3)
         total_duration = round(total_duration, 3)
 
+        # Get page count
+        page_count = get_pdf_page_count(str(pdf_path))
+        
         fields = list(gt.keys())
         summary_row = {"invoice": base_name, "pipeline": engine_name, 
                       "ollama_duration": ollama_duration, 
                       "processing_duration": processing_duration, 
                       "total_duration": total_duration, 
+                      "page_count": page_count,
                       "searchable": is_searchable}
         detail_rows = []
         correct = tp = fp = fn = 0
@@ -123,8 +140,8 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
         prec, rec, f1 = calc_metrics(tp, fp, fn)
         summary_row.update(precision=prec, recall=rec, f1=f1)
 
-        # --- NEW: Check business rule acceptance ---
-        summary_row["acceptance"] = int(check_acceptance(gt, pred))
+        # --- NEW: Check business rule success ---
+        summary_row["success"] = int(check_acceptance(gt, pred))
 
         print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {total_duration}s.")
         return {"summary": summary_row, "details": detail_rows}
@@ -147,7 +164,7 @@ def generate_final_results():
     pipeline_metrics = collections.defaultdict(lambda: {
         'accuracies': [], 'precisions': [], 'recalls': [], 'f1s': [], 
         'ollama_durations': [], 'processing_durations': [], 'total_durations': [], 
-        'acceptances': []
+        'successes': []
     })
 
     with open(OUTPUT_SUMMARY_CSV, "r", encoding="utf-8") as f:
@@ -170,11 +187,15 @@ def generate_final_results():
                 pipeline_metrics[pipeline]['ollama_durations'].append(0.0)
                 pipeline_metrics[pipeline]['processing_durations'].append(float(row['duration']))
             
-            pipeline_metrics[pipeline]['acceptances'].append(float(row['acceptance']))
+            # Handle both old 'acceptance' and new 'success' columns for backward compatibility
+            if 'success' in row:
+                pipeline_metrics[pipeline]['successes'].append(float(row['success']))
+            elif 'acceptance' in row:
+                pipeline_metrics[pipeline]['successes'].append(float(row['acceptance']))
 
     header = ["pipeline", "mean_accuracy", "mean_precision", "mean_recall", "mean_f1", 
               "mean_ollama_duration", "mean_processing_duration", "mean_total_duration",
-              "acceptance_rate"]
+              "success_rate"]
     with open(OUTPUT_RESULTS_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=header)
         writer.writeheader()
@@ -188,7 +209,7 @@ def generate_final_results():
                 "mean_ollama_duration": round(statistics.mean(data['ollama_durations']), 3),
                 "mean_processing_duration": round(statistics.mean(data['processing_durations']), 3),
                 "mean_total_duration": round(statistics.mean(data['total_durations']), 3),
-                "acceptance_rate": round(statistics.mean(data['acceptances']), 3)
+                "success_rate": round(statistics.mean(data['successes']), 3)
             })
 
 
@@ -250,8 +271,8 @@ def main():
 
             # --- Update header to include the new duration fields ---
             header_summary = ["invoice", "pipeline", *fields, "accuracy", "precision", 
-                             "recall", "f1", "acceptance", "ollama_duration", 
-                             "processing_duration", "total_duration", "searchable"]
+                             "recall", "f1", "success", "ollama_duration", 
+                             "processing_duration", "total_duration", "page_count", "searchable"]
             header_details = ["invoice", "pipeline", "field", "expected", "predicted", 
                              "match", "searchable"]
 
