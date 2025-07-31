@@ -64,7 +64,7 @@ def is_match(field: str, true_val, pred_val) -> bool:
     return canon_text(true_val) == canon_text(pred_val)
 
 
-def check_acceptance(gt: Dict, pred: Dict) -> bool:
+def check_success(gt: Dict, pred: Dict) -> bool:
     """
     Checks if the extracted data meets the business rules for automated processing.
     """
