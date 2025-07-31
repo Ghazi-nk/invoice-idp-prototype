@@ -45,9 +45,9 @@ TMP_DIR = str(PROJECT_ROOT / 'app' / 'results' / 'tmp')
 # =============================================================================
 # --- Benchmark Configuration ---
 # =============================================================================
-# Benchmark data directories
-LABELS_DIR = str(RESOURCES_DIR / 'GroundTruth')
-INVOICES_DIR = str(RESOURCES_DIR / 'Inovices')
+# Benchmark data directories - TEMPORARILY CHANGED FOR NEW DATASET
+LABELS_DIR = str(PROJECT_ROOT / 'app' / 'benchmark' / 'labels')
+INVOICES_DIR = str(PROJECT_ROOT / 'app' / 'benchmark' / 'invoices')
 
 # =============================================================================
 # --- Sample files for testing ---
