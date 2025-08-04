@@ -1,3 +1,20 @@
+"""
+Zentrale Konfigurationsdatei für die IDP-Pipeline.
+
+Diese Datei definiert alle wichtigen Pfade, URLs und Konfigurationsparameter
+für das Intelligent Document Processing System. Die Konfiguration wird aus
+Umgebungsvariablen geladen und stellt sinnvolle Defaults bereit.
+
+Umgebungsvariablen:
+- OLLAMA_BASE_URL: URL der Ollama-Instanz (z.B. http://localhost:11434)
+- OLLAMA_MODEL: Name des zu verwendenden LLM-Modells (z.B. llama3.1:8b)
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import os
 import sys
 from dotenv import load_dotenv

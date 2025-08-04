@@ -1,3 +1,30 @@
+"""
+Benchmark-System für die Evaluation von IDP-Pipeline-Performance.
+
+Dieses Modul implementiert ein umfassendes Benchmark-System zur systematischen
+Evaluation verschiedener OCR-Engines und Pipeline-Konfigurationen. Es führt
+automatisierte Tests gegen Ground-Truth-Daten durch und generiert detaillierte
+Performance-Metriken.
+
+Funktionen:
+- Multi-Engine OCR-Benchmarking (Tesseract, PaddleOCR, EasyOCR, DocTR, LayoutLMv3)
+- Ground-Truth-Vergleich mit Precision, Recall, F1-Score
+- Parallelisierte Verarbeitung für bessere Performance
+- CSV-Export für wissenschaftliche Auswertung
+- Aggregierte Pipeline-Performance-Analyse
+
+Metriken:
+- Accuracy: Prozentuale Übereinstimmung der Felder
+- Precision/Recall/F1: Klassische ML-Evaluationsmetriken
+- Success Rate: Anteil erfolgreich verarbeiteter Dokumente
+- Processing Duration: Zeitanalyse für Performance-Optimierung
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import json
 import csv
 import time
@@ -21,7 +48,18 @@ from app.benchmark.evaluation_utils import is_match, check_success
 
 
 def get_pdf_page_count(pdf_path: str) -> int:
-    """Get the number of pages in a PDF file."""
+    """
+    Ermittelt die Anzahl der Seiten in einer PDF-Datei.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        int: Anzahl der Seiten oder 0 bei Fehlern
+        
+    Note:
+        Verwendet PyMuPDF für robuste PDF-Verarbeitung.
+    """
     try:
         doc = fitz.open(pdf_path)
         page_count = doc.page_count
@@ -58,7 +96,22 @@ OUTPUT_RESULTS_CSV = str(BENCHMARK_DIR / f"results_{MODEL_SAFE}.csv")
 
 
 def calc_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
-    """Calculates precision, recall, and F1-score."""
+    """
+    Berechnet Precision, Recall und F1-Score aus Konfusionsmatrix-Werten.
+    
+    Diese Funktion implementiert die klassischen ML-Evaluationsmetriken
+    für binäre Klassifikation basierend auf True Positives, False Positives
+    und False Negatives.
+    
+    Args:
+        tp (int): True Positives (korrekt erkannte Felder)
+        fp (int): False Positives (fälschlich erkannte Felder) 
+        fn (int): False Negatives (verpasste Felder)
+        
+    Returns:
+        tuple[float, float, float]: (Precision, Recall, F1-Score) gerundet auf 3 Stellen
+
+    """
     precision = tp / (tp + fp) if tp + fp > 0 else 0.0
     recall = tp / (tp + fn) if tp + fn > 0 else 0.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall > 0 else 0.0
@@ -215,7 +268,26 @@ def generate_final_results():
 
 
 def main():
-    """Runs the main benchmarking process."""
+    """
+    Hauptfunktion zur Ausführung des Benchmark-Systems.
+    
+    Koordiniert die gesamte Benchmark-Ausführung: Datei-Discovery,
+    Parallelisierung, Engine-Testing und Ergebnis-Aggregation.
+    Erstellt umfassende CSV-Reports für wissenschaftliche Auswertung.
+    
+    Workflow:
+        1. Invoice- und Label-Dateien scannen
+        2. Durchsuchbare PDFs identifizieren  
+        3. Task-Matrix erstellen (PDFs × Engines)
+        4. Parallelisierte Verarbeitung mit multiprocessing
+        5. Ergebnis-Sammlung und CSV-Export
+        6. Aggregierte Statistiken generieren
+        
+    Output-Dateien:
+        - details_{model}.csv: Detaillierte Feld-Evaluationen
+        - summary_{model}.csv: Zusammenfassung pro Rechnung
+        - results_{model}.csv: Aggregierte Pipeline-Performance
+    """
     completed_work = set()
     if os.path.exists(OUTPUT_SUMMARY_CSV):
         with open(OUTPUT_SUMMARY_CSV, "r", encoding="utf-8") as f:

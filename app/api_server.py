@@ -1,3 +1,26 @@
+"""
+FastAPI-basierte REST-API für Intelligent Document Processing.
+
+Dieses Modul implementiert eine RESTful API zur Verarbeitung von PDF-Rechnungen
+mit verschiedenen OCR-Engines und LLM-basierter semantischer Extraktion.
+Die API bietet sowohl vollständige Pipeline-Verarbeitung als auch modulare
+Endpunkte für einzelne Verarbeitungsschritte.
+
+Verfügbare Endpunkte:
+- POST /api/v1/invoice-extract: Vollständige Pipeline-Verarbeitung (PDF → strukturierte Daten)
+- POST /api/v1/ocr: Reine OCR-Texterkennung 
+- POST /api/v1/extract-searchable-text: Durchsuchbarer PDF-Text
+- POST /api/v1/llm-invoice-extract: LLM-basierte Extraktion aus OCR-Text
+- POST /api/v1/pdf-query: Freie Abfragen mit benutzerdefinierten Prompts
+- GET /api/v1/ocr-engines: Liste der verfügbaren OCR-Engines
+- GET /docs: openapi documentation
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import logging
 from typing import Optional, List
 
@@ -36,32 +59,62 @@ async def root():
 # =============================================================================
 
 class BaseRequest(BaseModel):
-    """Base request model for endpoints that require a PDF file."""
-    pdf_base64: str = Field(..., description="The PDF file encoded as a base64 string.")
-    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"The OCR engine to use. Defaults to '{DEFAULT_ENGINE}'.")
+    """
+    Basis-Request-Modell für Endpunkte, die eine PDF-Datei benötigen.
+    
+    Dieses Modell stellt die gemeinsamen Felder für alle PDF-verarbeitenden
+    Endpunkte zur Verfügung und gewährleistet konsistente API-Schemas.
+    """
+    pdf_base64: str = Field(..., description="PDF-Datei als Base64-kodierter String")
+    engine: Optional[str] = Field(DEFAULT_ENGINE, description=f"OCR-Engine zur Texterkennung. Standard: '{DEFAULT_ENGINE}'. Verfügbar: tesseract, paddleocr, easyocr, doctr, layoutlmv3")
 
 class PDFQueryRequest(BaseRequest):
-    """Request body for PDF query endpoint with custom prompt."""
-    prompt: str = Field(..., description="The prompt to send to Ollama.")
+    """
+    Request-Modell für PDF-Abfragen mit benutzerdefiniertem Prompt.
+    
+    Erweitert das BaseRequest um ein Prompt-Feld für freie Abfragen
+    an das Dokument mittels LLM.
+    """
+    prompt: str = Field(..., description="Benutzerdefinierter Prompt für die Dokumentenabfrage")
 
 class LLMExtractRequest(BaseModel):
-    """Request for LLM-based invoice field extraction from pre-processed OCR text."""
-    ocr_pages: List[str] = Field(..., description="List of OCR text per page.")
+    """
+    Request-Modell für LLM-basierte Feldextraktion aus vorverarbeitetem OCR-Text.
+    
+    Dieser Request-Typ ermöglicht die direkte LLM-Verarbeitung von bereits
+    extrahiertem OCR-Text ohne erneute PDF-Verarbeitung.
+    """
+    ocr_pages: List[str] = Field(..., description="Liste von OCR-Texten pro Seite")
 
 # =============================================================================
 # --- Response Models ---
 # =============================================================================
 
 class TextResponse(BaseModel):
-    """Base response model for text data."""
-    result: str = Field(..., description="Extracted text data.")
+    """
+    Basis-Response-Modell für Textdaten.
+    
+    Wird für einfache Text-Antworten verwendet, z.B. für durchsuchbaren
+    PDF-Text oder LLM-Antworten.
+    """
+    result: str = Field(..., description="Extrahierte Textdaten")
 
 class OCRTextResponse(BaseModel):
-    """Response model for OCR text extraction."""
-    ocr_text: List[str] = Field(..., description="List of OCR text extracted from each page.")
+    """
+    Response-Modell für OCR-Texterkennung.
+    
+    Enthält den erkannten Text pro Seite als strukturierte Liste.
+    """
+    ocr_text: List[str] = Field(..., description="Liste von OCR-Text pro Seite")
 
 class InvoiceExtractionResponse(BaseModel):
-    """Response model for invoice data extraction."""
+    """
+    Response-Modell für strukturierte Rechnungsdaten-Extraktion.
+    
+    Definiert das Schema für alle extrahierbaren Rechnungsfelder gemäß
+    dem IncomingInvoiceSchema. Alle Felder sind optional, da nicht jede
+    Rechnung alle Informationen enthält.
+    """
     invoice_date: Optional[str] = None
     vendor_name: Optional[str] = None
     invoice_number: Optional[str] = None
@@ -101,7 +154,18 @@ logger = logging.getLogger("invoice_api")
 
 
 def select_engine(engine: Optional[str]) -> str:
-    """Helper to select and validate the OCR engine, falling back to default if needed."""
+    """
+    Wählt und validiert die OCR-Engine, mit Fallback auf Standard-Engine.
+    
+    Args:
+        engine (Optional[str]): Gewünschte OCR-Engine oder None
+        
+    Returns:
+        str: Validierte OCR-Engine als String
+        
+    Note:
+        Fällt automatisch auf DEFAULT_ENGINE zurück bei ungültigen Eingaben.
+    """
     if not engine:
         return DEFAULT_ENGINE
     engine_to_use = engine.lower()
@@ -114,8 +178,23 @@ def select_engine(engine: Optional[str]) -> str:
 @app.post("/api/v1/invoice-extract", summary="Extract Invoice Data", response_model=InvoiceExtractionResponse)
 def extract_data(request: BaseRequest) -> InvoiceExtractionResponse:
     """
-    Receives a base64-encoded PDF invoice and returns the extracted structured data as JSON.
+    Vollständige Pipeline-Verarbeitung: Extrahiert strukturierte Daten aus PDF-Rechnungen.
     
+    Dieser Endpunkt führt die komplette IDP-Pipeline durch:
+    1. Base64-PDF dekodieren und temporär speichern
+    2. OCR-basierte Texterkennung mit gewählter Engine
+    3. LLM-basierte semantische Extraktion der Rechnungsfelder
+    4. Verifikation und Post-Processing der Daten
+    
+    Args:
+        request (BaseRequest): Request mit Base64-kodierter PDF und OCR-Engine
+        
+    Returns:
+        InvoiceExtractionResponse: Strukturierte Rechnungsdaten
+        
+    Raises:
+        HTTPException: Bei ungültigen PDF-Daten oder Verarbeitungsfehlern
+
     """
     engine_to_use = select_engine(request.engine)
     try:
@@ -152,8 +231,19 @@ def extract_data(request: BaseRequest) -> InvoiceExtractionResponse:
 @app.post("/api/v1/ocr", summary="Get Raw OCR Text", response_model=OCRTextResponse)
 def get_ocr_text(request: BaseRequest) -> OCRTextResponse:
     """
-    Receives a base64-encoded PDF invoice and returns the raw OCR text per page.
-
+    Extrahiert reinen OCR-Text aus einer PDF-Rechnung.
+    
+    Dieser Endpunkt führt nur die OCR-Verarbeitung durch und gibt
+    den erkannten Text zurück, ohne LLM-basierte Feldextraktion.
+    
+    Args:
+        request (BaseRequest): Request mit Base64-PDF und OCR-Engine
+        
+    Returns:
+        OCRTextResponse: Roher OCR-Text pro Seite
+        
+    Raises:
+        HTTPException: Bei ungültigen PDF-Daten oder OCR-Fehlern
     """
     engine_to_use = select_engine(request.engine)
     try:
@@ -171,14 +261,32 @@ def get_ocr_text(request: BaseRequest) -> OCRTextResponse:
 @app.get("/api/v1/ocr-engines", summary="List Available OCR Engines")
 def get_ocr_engines() -> List[str]:
     """
-    Returns a list of available OCR engines.
+    Gibt eine Liste aller verfügbaren OCR-Engines zurück.
+    
+    Returns:
+        List[str]: Namen aller konfigurierten OCR-Engines
+        
+    
     """
     return get_available_engines()
 
 @app.post("/api/v1/extract-searchable-text", summary="Extract Searchable Text from PDF", response_model=OCRTextResponse)
 def extract_searchable_text(request: BaseRequest) -> OCRTextResponse:
     """
-    Extracts all searchable text from a PDF (no OCR). Returns as a single string.
+    Extrahiert durchsuchbaren Text aus einer PDF ohne OCR-Verarbeitung.
+    
+    Dieser Endpunkt nutzt eingebetteten Text in PDFs und ist deutlich
+    schneller als OCR-Verarbeitung. Für gescannte PDFs ohne Text
+    sollte der /ocr Endpunkt verwendet werden.
+    
+    Args:
+        request (BaseRequest): Request mit Base64-PDF
+        
+    Returns:
+        OCRTextResponse: Extrahierter Text pro Seite oder Fehlermeldung
+        
+    Note:
+        Gibt Fehlermeldung zurück wenn PDF keinen durchsuchbaren Text enthält.
     """
     try:
         with save_base64_to_temp_pdf(request.pdf_base64) as temp_pdf_path:
@@ -196,7 +304,18 @@ def extract_searchable_text(request: BaseRequest) -> OCRTextResponse:
 @app.post("/api/v1/llm-invoice-extract", summary="LLM-based Field Extraction", response_model=InvoiceExtractionResponse)
 def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
     """
-    Runs LLM-based field extraction on provided OCR text pages. Returns extracted invoice fields.
+    Führt LLM-basierte Feldextraktion auf vorhandenem OCR-Text durch.
+    
+    Dieser Endpunkt nimmt bereits extrahierten OCR-Text entgegen
+    und führt nur die semantische Extraktion und Post-Processing durch.
+    Ideal für modulare Verarbeitung oder wenn OCR bereits durchgeführt wurde.
+    
+    Args:
+        request (LLMExtractRequest): Request mit OCR-Text-Seiten
+        
+    Returns:
+        InvoiceExtractionResponse: Strukturierte Rechnungsdaten
+    
     """
     try:
         extracted_data_tuple = ollama_extract_invoice_fields(request.ocr_pages)
@@ -238,7 +357,22 @@ def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
 @app.post("/api/v1/pdf-query", summary="Query PDF with Custom Prompt", response_model=TextResponse)
 def pdf_query(request: PDFQueryRequest) -> TextResponse:
     """
-    Receives a base64-encoded PDF and a custom prompt, performs OCR, and returns the language model's response.
+    Führt benutzerdefinierte Abfragen gegen PDF-Dokumente durch.
+    
+    Dieser Endpunkt ermöglicht freie Textabfragen an PDF-Dokumente
+    mittels LLM. Im Gegensatz zur strukturierten Feldextraktion
+    können hier beliebige Fragen gestellt werden.
+    
+    Args:
+        request (PDFQueryRequest): Request mit Base64-PDF, Engine und Custom Prompt
+        
+    Returns:
+        TextResponse: Freie LLM-Antwort auf die Benutzerabfrage
+        
+    Examples:
+        - "Fasse den Inhalt dieser Rechnung zusammen"
+        - "Welche Produkte wurden gekauft?"
+        - "Gibt es Rabatte oder Sonderkonditionen?"
     """
     engine_to_use = select_engine(request.engine)
     try:
@@ -259,7 +393,22 @@ def pdf_query(request: PDFQueryRequest) -> TextResponse:
 
 
 def handle_error(e: Exception):
-    """Helper to raise appropriate HTTP exceptions and log errors."""
+    """
+    Zentrale Fehlerbehandlung für die API.
+    
+    Diese Funktion behandelt alle unerwarteten Exceptions in den
+    API-Endpunkten und wirft entsprechende HTTPExceptions mit
+    benutzerfreundlichen Fehlermeldungen.
+    
+    Args:
+        e (Exception): Aufgetretene Exception
+        
+    Raises:
+        HTTPException: HTTP 500 mit Fehlerbeschreibung
+        
+    Note:
+        Loggt alle Fehler für Debugging und Monitoring.
+    """
     if isinstance(e, HTTPException):
         logger.error(f"HTTPException: {e.detail}")
         raise e

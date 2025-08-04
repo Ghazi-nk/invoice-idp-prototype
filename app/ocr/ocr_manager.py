@@ -1,3 +1,26 @@
+"""
+OCR-Engine-Manager für Multi-Engine-Texterkennung.
+
+Dieses Modul implementiert einen einheitlichen Manager für verschiedene OCR-Engines
+zur Texterkennung aus PDF-Dokumenten. Es bietet eine abstrahierte Schnittstelle
+für die Verwendung von Tesseract, PaddleOCR, EasyOCR, DocTR und LayoutLMv3.
+
+Unterstützte OCR-Engines:
+- Tesseract: Klassische OCR-Engine von Google
+- PaddleOCR: Hochperformante OCR von PaddlePaddle
+- EasyOCR: Benutzerfreundliche OCR mit Deep Learning
+- DocTR: Document Text Recognition von Mindee
+- LayoutLMv3: Layout-bewusste OCR von Microsoft
+
+Architektur:
+PDF → PNG-Konvertierung → Engine-spezifische OCR → Einheitliches Text-Format
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 from __future__ import annotations
 
 import os
@@ -20,14 +43,19 @@ logger = logging.getLogger("ocr_manager")
 
 def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable) -> List[str] | None:
     """
-    Process a PDF file with the given OCR function.
+    Verarbeitet eine PDF-Datei mit der angegebenen OCR-Funktion.
+    
+    Diese generische Funktion konvertiert PDF-Seiten zu PNG-Bildern und
+    wendet die spezifizierte OCR-Engine auf jede Seite an. Sie dient als
+    einheitliche Schnittstelle für verschiedene OCR-Engines.
     
     Args:
-        pdf_path: Path to the PDF file
-        ocr_function: OCR function to use
+        pdf_path (str): Pfad zur PDF-Datei
+        ocr_function (Callable): OCR-Funktion zur Texterkennung
     
     Returns:
-        List of processed text per page, or None on error
+        List[str] | None: Liste von erkanntem Text pro Seite oder None bei Fehlern  
+    
     """
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
     ocr_engine_name = ocr_function.__name__
@@ -47,13 +75,43 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable) -> List[str] | N
 
 
 def easyocr_process_pdf(pdf_path: str) -> List[str] | None:
+    """
+    Verarbeitet PDF mit EasyOCR-Engine.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        List[str] | None: Erkannter Text pro Seite oder None bei Fehlern
+    """
     return process_pdf_with_ocr(pdf_path, easyocr_png_to_text)
 
 def tesseract_process_pdf(pdf_path: str) -> List[str] | None:
+    """
+    Verarbeitet PDF mit Tesseract-OCR-Engine.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        List[str] | None: Erkannter Text pro Seite oder None bei Fehlern
+    """
     return process_pdf_with_ocr(pdf_path, tesseract_png_to_text)
 
 def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
-    """Adapter for layoutlm_image_to_text to match expected signature."""
+    """
+    Verarbeitet PDF mit LayoutLMv3-Engine.
+    
+    LayoutLMv3 ist eine layout-bewusste OCR-Engine, die sowohl Text als auch
+    die räumliche Anordnung von Dokumentelementen berücksichtigt.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        List[str] | None: Erkannter Text pro Seite oder None bei Fehlern
+
+    """
     try:
         png_pages: List[str] = pdf_to_png_with_pymupdf(pdf_path)
         results = []
@@ -66,23 +124,49 @@ def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
         logger.exception(f"Fehler bei LayoutLM für '{pdf_path}': {e}")
         return None
 
-# Adapter for doctr_pdf_to_text to match expected signature
 def doctr_process_pdf(pdf_path: str) -> List[str] | None:
-    """Adapter for doctr_pdf_to_text to match expected signature."""
+    """
+    Verarbeitet PDF mit DocTR-Engine.
+    
+    DocTR (Document Text Recognition) ist eine moderne OCR-Engine von Mindee,
+    die speziell für Dokumentenverarbeitung optimiert ist.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        List[str] | None: Erkannter Text pro Seite oder None bei Fehlern
+        
+    Note:
+        DocTR verarbeitet PDFs direkt ohne PNG-Konvertierung.
+    """
     try:
         return doctr_pdf_to_text(pdf_path)
     except Exception as e:
         logger.exception(f"Fehler bei Doctr OCR für '{pdf_path}': {e}")
         return None
 
-# Adapter for paddleocr_pdf_to_text to match expected signature
 def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
+    """
+    Verarbeitet PDF mit PaddleOCR-Engine.
+    
+    PaddleOCR ist eine hochperformante OCR-Engine von Baidu PaddlePaddle,
+    die für verschiedene Sprachen und Layouts optimiert ist.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        List[str] | None: Erkannter Text pro Seite oder None bei Fehlern
+
+    """
     try:
         return paddleocr_pdf_to_text(pdf_path)
     except Exception as e:
         logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}': {e}")
         return None
 
+# Engine-Mapping: Verbindet Engine-Namen mit ihren Verarbeitungsfunktionen
 _OCR_ENGINE_PDF_MAP: Dict[str, Callable] = {
     "doctr": doctr_process_pdf,
     "easyocr": easyocr_process_pdf,
@@ -94,14 +178,27 @@ _OCR_ENGINE_PDF_MAP: Dict[str, Callable] = {
 
 def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr") -> List[str]:
     """
-    Process a PDF file with the specified OCR engine.
+    Verarbeitet eine PDF-Datei mit der angegebenen OCR-Engine.
+    
+    Diese Hauptfunktion dient als einheitliche Schnittstelle für alle
+    verfügbaren OCR-Engines. Sie validiert die Engine-Auswahl und
+    delegiert die Verarbeitung an die entsprechende Engine-Funktion.
     
     Args:
-        pdf_path: Path to the PDF file
-        engine: OCR engine to use
+        pdf_path (str): Pfad zur zu verarbeitenden PDF-Datei
+        engine (str, optional): Name der OCR-Engine. Verfügbare Optionen:
+            - "tesseract": Google Tesseract OCR
+            - "paddleocr": Baidu PaddleOCR (Standard)
+            - "easyocr": EasyOCR mit Deep Learning
+            - "doctr": Mindee DocTR
+            - "layoutlm": Microsoft LayoutLMv3
         
     Returns:
-        List of text strings (one per page)
+        List[str]: Liste von erkanntem Text pro Seite
+        
+    Raises:
+        ValueError: Bei ungültiger Engine-Auswahl
+
     """
     engine = engine.lower()
     if engine not in _OCR_ENGINE_PDF_MAP:
@@ -120,9 +217,13 @@ def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr") -> List[str]:
 
 def get_available_engines() -> List[str]:
     """
-    Get list of available OCR engines.
+    Gibt eine Liste aller verfügbaren OCR-Engines zurück.
+    
+    Diese Funktion wird für API-Endpunkte und Validierungen verwendet,
+    um dynamisch die verfügbaren OCR-Optionen abzufragen.
     
     Returns:
-        List of available OCR engine names
+        List[str]: Namen aller verfügbaren OCR-Engines
+        
     """
     return list(_OCR_ENGINE_PDF_MAP.keys()) 

@@ -1,3 +1,19 @@
+"""
+Haupt-Pipeline für Intelligent Document Processing (IDP).
+
+Dieses Modul implementiert die zentrale Pipeline für die automatisierte Extraktion
+von Informationen aus Eingangsrechnungen. Die Pipeline kombiniert OCR-Engines zur
+Texterkennung mit Large Language Models (LLMs) zur semantischen Datenextraktion.
+
+Architektur:
+    PDF → OCR → LLM → Verifikation → Post-Processing → Strukturierte Daten
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 from __future__ import annotations
 
 import os
@@ -19,14 +35,32 @@ logger = logging.getLogger("pipeline")
 
 def process_invoice(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, float, float]:
     """
-    Full pipeline: PDF ➜ OCR ➜ LLM ➜ verify & correct ➜ post-process ➜ final dict.
+s    Führt die vollständige IDP-Pipeline für eine Rechnung durch.
+    
+    Diese Funktion implementiert den kompletten Verarbeitungsworkflow:
+    1. OCR-basierte Texterkennung aus PDF
+    2. Semantische Extraktion mittels LLM (Ollama)
+    3. Verifikation und Korrektur der extrahierten Daten
+    4. Post-Processing und Finalisierung
     
     Args:
-        pdf_path: Path to the PDF file to process
-        engine: OCR engine to use (default: paddleocr)
+        pdf_path (str): Pfad zur zu verarbeitenden PDF-Datei
+        engine (str, optional): OCR-Engine für die Texterkennung. 
+                               Verfügbare Optionen: 'tesseract', 'paddleocr', 'easyocr', 
+                               'doctr', 'layoutlmv3'. Defaults to "paddleocr".
     
     Returns:
-        A tuple containing (extracted_fields, ollama_duration, processing_duration)
+        Tuple[Dict, float, float]: Ein Tupel bestehend aus:
+            - extracted_fields (Dict): Extrahierte und strukturierte Rechnungsdaten
+            - ollama_duration (float): Zeit für LLM-Verarbeitung in Sekunden  
+            - processing_duration (float): Gesamte Verarbeitungszeit ohne LLM in Sekunden
+            
+    Raises:
+        ValueError: Wenn keine Textinhalte aus der PDF extrahiert werden konnten
+        RuntimeError: Bei Fehlern in der LLM-Kommunikation
+        FileNotFoundError: Wenn die PDF-Datei nicht gefunden wurde
+        
+
     """
     start_time = time.perf_counter()
     
@@ -60,16 +94,22 @@ def process_invoice(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, 
 
 
 # Legacy alias for backward compatibility
-def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, float, float]:
+def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, float, float]: #todo: remove this function
     """
-    Legacy alias for process_invoice function.
+    Legacy-Alias für die process_invoice-Funktion.
+    
+    Diese Funktion wird aus Kompatibilitätsgründen bereitgestellt und leitet
+    Aufrufe an die neue process_invoice-Funktion weiter.
     
     Args:
-        pdf_path: Path to the PDF file to process
-        engine: OCR engine to use (default: paddleocr)
+        pdf_path (str): Pfad zur zu verarbeitenden PDF-Datei
+        engine (str, optional): OCR-Engine für die Texterkennung. Defaults to "paddleocr".
     
     Returns:
-        A tuple containing (extracted_fields, ollama_duration, processing_duration)
+        Tuple[Dict, float, float]: Siehe process_invoice() für Details
+        
+    Note:
+        Diese Funktion ist deprecated. Verwenden Sie stattdessen process_invoice().
     """
     return process_invoice(pdf_path, engine=engine)
 
