@@ -1,1 +1,0 @@
-# Document digitalization tests package 
