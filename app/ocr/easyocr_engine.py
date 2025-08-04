@@ -1,3 +1,16 @@
+"""
+EasyOCR-Engine für benutzerfreundliche Texterkennung.
+
+Dieses Modul implementiert die Integration von EasyOCR, einer
+Deep-Learning-basierten OCR-Engine, die für einfache Bedienung
+und gute Ergebnisse bei verschiedenen Schriftarten optimiert ist.
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import sys
 import logging
 from typing import List, Dict, Any, Union, cast
@@ -9,14 +22,21 @@ logger = logging.getLogger("easyocr_engine")
 
 def easyocr_png_to_text(png_path: str, languages: List[str] = ['de']) -> str:
     """
-    Extracts text from a PNG image using EasyOCR.
+    Extrahiert Text aus einem PNG-Bild mittels EasyOCR.
+    
+    Diese Funktion verwendet EasyOCR für die Texterkennung mit
+    konfigurierbarer Sprachunterstützung. Sie extrahiert alle
+    erkannten Textregionen und fügt sie zu einem zusammenhängenden
+    Text zusammen.
     
     Args:
-        png_path: Path to the PNG file
-        languages: List of language codes for EasyOCR
+        png_path (str): Pfad zur PNG-Bilddatei
+        languages (List[str], optional): Liste der Sprachcodes für EasyOCR.
+                                        Defaults to ['de'] für Deutsch.
     
     Returns:
-        OCR text as a string
+        str: Erkannter Text als String, Textregionen durch Zeilenumbrüche getrennt
+
     """
     
     reader = easyocr.Reader(languages, gpu=False)

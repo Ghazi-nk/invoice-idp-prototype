@@ -1,4 +1,24 @@
-# FILE: utils/pdf_utils.py
+"""
+PDF-Utilities für Dokumentenverarbeitung und -konvertierung.
+
+Dieses Modul stellt grundlegende Funktionen für die Verarbeitung von PDF-Dokumenten
+bereit, einschließlich Base64-Dekodierung, PNG-Konvertierung und Textextraktion.
+Es dient als Grundlage für die OCR-Pipeline und API-Endpunkte.
+
+Hauptfunktionen:
+- Base64-PDF-Dekodierung mit automatischem Cleanup
+- PDF-zu-PNG-Konvertierung für OCR-Verarbeitung
+- Extrahierung von durchsuchbarem Text aus PDFs
+
+Verwendete Bibliotheken:
+- PyMuPDF (fitz): Hochperformante PDF-Verarbeitung
+- tempfile: Sichere temporäre Dateiverwaltung
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
 
 import base64
 import logging
@@ -17,9 +37,30 @@ logger = logging.getLogger("pdf_utils")
 @contextmanager
 def save_base64_to_temp_pdf(base64_string: str):
     """
-    Decodes a base64 string and saves it to a temporary PDF file.
-    Yields the path to the temporary file, and ensures cleanup.
-    Logs errors if decoding or file operations fail.
+    Dekodiert einen Base64-String und speichert ihn als temporäre PDF-Datei.
+    
+    Diese Context-Manager-Funktion dekodiert Base64-kodierte PDF-Daten,
+    speichert sie in einer temporären Datei und gewährleistet automatisches
+    Cleanup nach der Verwendung. Ideal für API-Endpunkte, die PDF-Uploads
+    als Base64-Strings empfangen.
+    
+    Args:
+        base64_string (str): Base64-kodierte PDF-Daten
+        
+    Yields:
+        str: Pfad zur temporären PDF-Datei
+        
+    Raises:
+        Exception: Bei Base64-Dekodierungsfehlern oder Dateisystemfehlern
+        
+    Example:
+        >>> with save_base64_to_temp_pdf(pdf_base64) as temp_path:
+        ...     result = process_pdf(temp_path)
+        # Automatisches Cleanup der temporären Datei
+        
+    Note:
+        Die temporäre Datei wird automatisch nach Verlassen des Context gelöscht,
+        auch bei Exceptions. Fehler beim Cleanup werden als Warnungen geloggt.
     """
     temp_file_path = None
     try:
@@ -38,25 +79,26 @@ def save_base64_to_temp_pdf(base64_string: str):
             except Exception as e:
                 logger.warning(f"Failed to remove temp file {temp_file_path}: {e}")
 
-def encode_image_to_base64(image_path: str) -> str:
-    """
-    Reads an image file and encodes its content into a base64 string.
-    Logs errors if file reading fails.
-    """
-    try:
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-        return encoded_string
-    except Exception as e:
-        logger.exception(f"Failed to encode image to base64: {image_path}")
-        raise
-
-
 def extract_text_if_searchable(pdf_path: str) -> list[str]:
     """
-    Open the PDF at `pdf_path`, extract all text, and return a list of strings (one per page).
-    If no text is found (i.e. likely a scanned/image PDF), returns an empty list.
-    Logs errors if PDF cannot be opened or read.
+    Extrahiert durchsuchbaren Text aus einer PDF-Datei.
+    
+    Diese Funktion öffnet eine PDF-Datei und extrahiert vorhandenen Text
+    ohne OCR-Verarbeitung. Sie ist ideal für PDFs mit eingebettetem Text
+    und kann als schnelle Alternative zur OCR-Verarbeitung dienen.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        
+    Returns:
+        list[str]: Liste von Textinhalten pro Seite. Leere Strings für
+                  Seiten ohne durchsuchbaren Text.
+                  
+    Raises:
+        RuntimeError: Bei PDF-Öffnungsfehlern oder beschädigten Dateien
+        
+    Note:
+        Gibt leere Liste zurück für gescannte PDFs ohne eingebetteten Text.     
     """
     try:
         doc = fitz.open(pdf_path)
@@ -74,10 +116,26 @@ def extract_text_if_searchable(pdf_path: str) -> list[str]:
 
 def pdf_to_png_with_pymupdf(pdf_path: str, zoom: float = 3.0) -> list[str]:
     """
-    Converts PDF pages to PNG images with high quality using PyMuPDF.
-    zoom=3.0 corresponds to about 300 DPI.
-    Logs errors if conversion fails.
-    """
+    Konvertiert PDF-Seiten zu hochauflösenden PNG-Bildern.
+    
+    Diese Funktion verwendet PyMuPDF für die Konvertierung von PDF-Seiten
+    zu PNG-Bildern mit konfigurierbarer Auflösung. Die resultierenden
+    Bilder werden für OCR-Verarbeitung optimiert.
+    
+    Args:
+        pdf_path (str): Pfad zur PDF-Datei
+        zoom (float, optional): Zoom-Faktor für die Auflösung.
+                               3.0 entspricht etwa 300 DPI. Defaults to 3.0.
+                               
+    Returns:
+        list[str]: Liste von Pfaden zu den generierten PNG-Dateien,
+                  ein Pfad pro PDF-Seite
+                  
+    Raises:
+        RuntimeError: Bei PDF-Öffnungsfehlern oder leeren PDFs
+        Exception: Bei Konvertierungsfehlern oder Dateisystemfehlern
+        
+     """
     try:
         doc = fitz.open(pdf_path)
         if doc.page_count == 0:

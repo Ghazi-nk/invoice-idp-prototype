@@ -1,3 +1,19 @@
+"""
+Semantische Extraktion von Rechnungsdaten mittels Large Language Models.
+
+Dieses Modul implementiert die semantische Datenextraktion aus OCR-Text unter
+Verwendung von Ollama-basierten Large Language Models. Es ermöglicht sowohl
+strukturierte Datenextraktion als auch freie Abfragen von PDF-Dokumenten.
+
+Die Extraktion erfolgt über ein Chat-Interface mit konfigurierbaren System-
+und User-Prompts, die eine konsistente und präzise Datenextraktion gewährleisten.
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import json
 import re
 import time
@@ -20,13 +36,34 @@ from app.config import (
 
 def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
     """
-    Extracts invoice fields by sending OCR text to an LLM.
+    Extrahiert strukturierte Rechnungsdaten aus OCR-Text mittels LLM.
+    
+    Diese Funktion sendet den OCR-Text seitenweise an ein Ollama-LLM und
+    extrahiert strukturierte Rechnungsinformationen basierend auf vordefinierten
+    System- und User-Prompts. Die Antwort wird als JSON-Objekt zurückgegeben.
+    
+    Der Extraktionsprozess verwendet ein Chat-Interface mit mehreren Nachrichten:
+    1. System-Prompt zur Konfiguration des LLM-Verhaltens
+    2. Benutzer-Nachrichten mit OCR-Text pro Seite  
+    3. Final User-Prompt zur Auslösung der JSON-Generierung
     
     Args:
-        ocr_pages: List of strings containing OCR text from each page
+        ocr_pages (List[str]): Liste von Strings mit OCR-Text von jeder Seite
     
     Returns:
-        A tuple containing (extracted_fields, ollama_duration)
+        Tuple[Dict, float]: Ein Tupel bestehend aus:
+            - extracted_fields (Dict): Extrahierte Rechnungsdaten als strukturiertes Dict
+            - ollama_duration (float): Zeit für LLM-Verarbeitung in Sekunden
+    
+    Raises:
+        ValueError: Wenn die OCR-Seiten Liste leer ist oder keine gültige JSON 
+                   in der LLM-Antwort gefunden wird
+        RuntimeError: Bei HTTP-Fehlern in der Ollama-API-Kommunikation
+        FileNotFoundError: Wenn die konfigurierten Prompt-Dateien nicht gefunden werden
+        
+    Note:
+        Erfordert eine laufende Ollama-Instanz und konfigurierte Prompt-Dateien.
+        Die Funktion unterdrückt SSL-Warnungen für lokale Ollama-Instanzen.
     """
     # Load standard prompts for regular text extraction
     try:
@@ -48,29 +85,10 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
         raise ValueError("Input ocr_pages list cannot be empty.")
 
     num_pages = len(ocr_pages)
-    
-    # For large documents (>3 pages), combine text and truncate to avoid confusion
-    if num_pages > 3:
-        print(f"[Info] Large document detected ({num_pages} pages). Optimizing for LLM processing...")
-        # For very large documents, focus on first and last pages which usually contain key info
-        if num_pages > 6:
-            # Take first 2 pages and last page
-            key_pages = ocr_pages[:2] + [ocr_pages[-1]]
-            combined_text = "\n\n=== PAGE BREAK ===\n\n".join(key_pages)
-            messages.append({"role": "user", "content": f"Here is the invoice text (pages 1-2 and {num_pages} of {num_pages}):\n\n---\n{combined_text}\n---"})
-        else:
-            # For 4-6 pages, combine all but truncate middle if too long
-            combined_text = "\n\n=== PAGE BREAK ===\n\n".join(ocr_pages)
-            if len(combined_text) > 6000:
-                truncated = combined_text[:3500] + "\n\n[... middle content truncated ...]\n\n" + combined_text[-2500:]
-                messages.append({"role": "user", "content": f"Here is the invoice text (truncated from {num_pages} pages):\n\n---\n{truncated}\n---"})
-            else:
-                messages.append({"role": "user", "content": f"Here is the complete invoice text ({num_pages} pages combined):\n\n---\n{combined_text}\n---"})
-    else:
-        # For smaller documents, keep the original page-by-page approach
-        for i, page_text in enumerate(ocr_pages):
-            message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
-            messages.append({"role": "user", "content": message_content})
+        
+    for i, page_text in enumerate(ocr_pages):
+        message_content = f"Here is the text for Page {i + 1} of {num_pages}:\n\n---\n{page_text}\n---"
+        messages.append({"role": "user", "content": message_content})
 
     # Add the final user prompt to trigger the JSON generation
     messages.append({"role": "user", "content": user_prompt.strip()})
@@ -112,14 +130,26 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
 
 def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
     """
-    Processes OCR text with a custom prompt and returns the raw Ollama response.
+    Verarbeitet OCR-Text mit einem benutzerdefinierten Prompt.
+    
+    Diese Funktion ermöglicht freie Abfragen und Analysen von PDF-Dokumenten
+    über ein benutzerdefiniertes Prompt. Im Gegensatz zur strukturierten 
+    Datenextraktion gibt diese Funktion die rohe LLM-Antwort zurück.
+    
+    Die Funktion verwendet spezielle PDF-Query-Prompts und kombiniert diese
+    mit dem benutzerdefinierten Prompt für maximale Flexibilität.
     
     Args:
-        ocr_pages: List of strings containing OCR text from each page
-        prompt: The custom prompt to send to Ollama
+        ocr_pages (List[str]): Liste von Strings mit OCR-Text von jeder Seite
+        prompt (str): Benutzerdefinierter Prompt für die Abfrage
         
     Returns:
-        The raw string response from Ollama
+        str: Rohe Antwort des LLM als String
+        
+    Raises:
+        RuntimeError: Bei HTTP-Fehlern in der Ollama-API-Kommunikation
+        ValueError: Bei ungültigen Antwortformaten des LLM
+    
     """
     # Load the system prompt for PDF querying
     try:
@@ -176,9 +206,23 @@ def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
 
 def _extract_first_complete_json(text: str) -> str | None:
     """
-    Extracts the first complete JSON object from a string.
-    It first tries to find content within <json_output> tags,
-    then falls back to finding the first brace-balanced object.
+    Extrahiert das erste vollständige JSON-Objekt aus einem String.
+    
+    Diese Hilfsfunktion implementiert eine robuste JSON-Extraktion aus
+    LLM-Antworten mit zwei Ansätzen:
+    1. Suche nach Inhalten in <json_output>-Tags
+    2. Fallback: Suche nach dem ersten klammerausgeglichenen Objekt
+    
+    Die Funktion berücksichtigt korrekte String-Maskierung und Verschachtelung
+    von JSON-Objekten für eine zuverlässige Extraktion.
+    
+    Args:
+        text (str): Eingabetext, der JSON-Inhalt enthalten kann
+        
+    Returns:
+        str | None: Extrahiertes JSON-String oder None wenn kein gültiges 
+                   JSON-Objekt gefunden wurde                 
+      
     """
     # --- NEW LOGIC: Prioritize finding content within <json_output> tags ---
     try:

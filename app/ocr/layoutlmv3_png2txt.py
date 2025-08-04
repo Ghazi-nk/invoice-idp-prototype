@@ -1,5 +1,15 @@
 """
-LayoutLMv3 OCR-Modul für PNG-Bilddateien.
+LayoutLMv3 OCR-Engine für layout-bewusste Dokumentenverarbeitung.
+
+Dieses Modul implementiert die Integration von Microsoft LayoutLMv3,
+einem Transformer-Modell für multimodale Dokumentenverarbeitung.
+LayoutLMv3 kombiniert Text-, Layout- und Bildinformationen für hochpräzise
+Texterkennung und Strukturverständnis.
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
 """
 import os
 import re
@@ -20,13 +30,26 @@ _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-large")
 
 def layoutlm_image_to_text(image_path: str) -> str:
     """
-    Extrahiert Text aus einem Bild mit LayoutLMv3.
+    Extrahiert Text aus einem Bild mittels LayoutLMv3.
+    
+    Diese Funktion nutzt Microsoft LayoutLMv3 für multimodale
+    Dokumentenverarbeitung, die Text-, Layout- und Bildinformationen
+    kombiniert. Sie bietet hochpräzise Texterkennung auch bei
+    komplexen Dokumentstrukturen.
     
     Args:
-        image_path: Pfad zur Bilddatei
+        image_path (str): Pfad zur Bilddatei (PNG, JPEG, etc.)
     
     Returns:
-        String mit reinem Text
+        str: Extrahierter Text als zusammenhängender String
+        
+    Raises:
+        FileNotFoundError: Wenn Bilddatei nicht gefunden wird
+        Exception: Bei Verarbeitungsfehlern des LayoutLMv3-Modells
+        
+    Note:
+        - Verwendet microsoft/layoutlmv3-large Pretrained Model
+        
     """
     try:
         # 1. Bild laden und mit LayoutLM verarbeiten

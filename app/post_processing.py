@@ -1,4 +1,22 @@
-# FILE: utils/post_processing.py
+"""
+Post-Processing und Verifikation extrahierter Rechnungsdaten.
+
+Dieses Modul implementiert regelbasierte Verifikation und Korrektur von
+LLM-extrahierten Rechnungsdaten. Es nutzt Regex-Patterns und Heuristiken
+zur Qualitätssicherung und Standardisierung der Ausgabedaten.
+
+Funktionen:
+- Verifikation von IBAN und USt-ID-Formaten
+- Korrektur und Normalisierung von Datumsformaten  
+- Datenvalidierung und -bereinigung
+- Finalisierung der Ausgabestruktur
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import re
 from datetime import datetime
 from typing import Dict, Any, List
@@ -23,8 +41,27 @@ IBAN_PATTERN: re.Pattern = re.compile(
 
 def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str, Any]:
     """
-    Acts as a "safety net" to verify and correct fields with strong patterns,
-    overwriting existing values if a valid pattern is found in the text.
+    Verifiziert und korrigiert extrahierte Felder mittels Regex-Patterns.
+    
+    Diese Funktion dient als "Sicherheitsnetz" für die LLM-Extraktion
+    und korrigiert häufige OCR-Fehler sowie fehlende Werte durch
+    regelbasierte Pattern-Erkennung im Volltext.
+    
+    Args:
+        data (Dict[str, Any]): Von LLM extrahierte Rechnungsdaten
+        full_text (str): Vollständiger OCR-Text für Pattern-Suche
+        
+    Returns:
+        Dict[str, Any]: Korrigierte und verifizierte Daten
+        
+    Korrekturen:
+        - IBAN: O→0 Korrektur, Leerzeichen-Entfernung, Prefix-Bereinigung
+        - USt-ID: Pattern-Erkennung für DE/ATU-Formate
+        - Automatische Nachsuche bei fehlenden kritischen Feldern
+        
+    Note:
+        Überschreibt LLM-Werte nur bei eindeutigen Pattern-Matches.
+        Loggt alle Korrekturen für Transparenz und Debugging.
     """
     if not isinstance(data, dict):
         return data
@@ -96,7 +133,25 @@ def verify_and_correct_fields(data: Dict[str, Any], full_text: str) -> Dict[str,
     return data
 
 def canon_number(x: str | float | None) -> float | None:
-    """Canonicalize a number value to a float."""
+    """
+    Kanonisiert einen Zahlenwert zu einem Float.
+    
+    Diese Funktion normalisiert verschiedene Zahlenformate (String, Float, Int)
+    zu einem einheitlichen Float-Wert mit 2 Dezimalstellen. Sie behandelt
+    häufige Formatierungen wie Währungssymbole, Tausendertrennzeichen und
+    Komma-als-Dezimaltrennzeichen.
+    
+    Args:
+        x (str | float | None): Zu normalisierender Zahlenwert
+        
+    Returns:
+        float | None: Normalisierter Float-Wert oder None bei ungültigen Eingaben
+        
+    Note:
+        - Entfernt Währungssymbole (€), Leerzeichen und Apostrophe
+        - Konvertiert Komma zu Punkt als Dezimaltrennzeichen
+        - Rundet auf 2 Dezimalstellen für Geldbeträge
+    """
     if x in (None, "", "null"): return None
     if isinstance(x, (int, float)): return round(float(x), 2)
     x = str(x).replace("'", "").replace(" ", "").replace("€", "").replace(",", ".")
@@ -107,7 +162,25 @@ def canon_number(x: str | float | None) -> float | None:
 
 
 def canon_date(date_str: str) -> str | None:
-    """Canonicalize a date string to 'DD.MM.YYYY' format."""
+    """
+    Kanonisiert einen Datumsstring zum Format 'DD.MM.YYYY'.
+    
+    Diese Funktion parst verschiedene Datumsformate und konvertiert
+    sie zu einem einheitlichen deutschen Datumsformat. Sie unterstützt
+    sowohl ISO-Formate als auch deutsche und amerikanische Varianten.
+    
+    Args:
+        date_str (str): Zu parsender Datumsstring
+        
+    Returns:
+        str | None: Datum im Format 'DD.MM.YYYY' oder None bei ungültigen Formaten
+        
+    Unterstützte Formate:
+        - DD.MM.YYYY (deutsch)
+        - YYYY-MM-DD (ISO)
+        - DD/MM/YYYY, YYYY/MM/DD
+        - YYYY.MM.DD
+    """
     if not date_str:
         return None
     date_str = date_str.strip()
@@ -122,8 +195,26 @@ def canon_date(date_str: str) -> str | None:
 
 def finalize_extracted_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Takes the raw dictionary from the LLM and finalizes it by converting
-    numeric fields from string to number types.
+    Finalisiert extrahierte Felder durch Datentyp-Konvertierung und Bereinigung.
+    
+    Diese Funktion nimmt das rohe Dictionary vom LLM und führt umfassende
+    Post-Processing-Schritte durch: Zahlenkonvertierung, Datumsformatierung,
+    Namensbereinigung und Entfernung von Adressteilen.
+    
+    Args:
+        data (Dict[str, Any]): Rohe extrahierte Daten vom LLM
+        
+    Returns:
+        Dict[str, Any]: Bereinigte und finalisierte Daten
+        
+    Verarbeitungsschritte:
+        - total_amount, tax_rate → Float-Konvertierung
+        - invoice_date → Datumsformatierung
+        - purchase_order_number → Bereinigung von Beschreibungstexten
+        - recipient_name, vendor_name → Adressentfernung und Längenkürzung
+        
+    Note:
+        Loggt alle Bereinigungsschritte für Transparenz und Debugging.
     """
     if not isinstance(data, dict):
         return data

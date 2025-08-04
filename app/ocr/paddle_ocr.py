@@ -1,10 +1,22 @@
+"""
+PaddleOCR-Engine für hochperformante Texterkennung.
+
+Dieses Modul implementiert die Integration von PaddleOCR,
+einer modernen Deep-Learning-basierten OCR-Engine mit Unterstützung
+für verschiedene Sprachen und komplexe Dokumentenlayouts.
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
+"""
+
 import logging
 import sys
 from typing import List
 
 from paddleocr import PaddleOCR
 
-#todo: debug empty extracted text with paddleocr
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("paddle_ocr")
@@ -12,14 +24,23 @@ logger = logging.getLogger("paddle_ocr")
 
 def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
     """
-    Extracts text from each page of a PDF using PaddleOCR.
-
+    Extrahiert Text aus jeder Seite einer PDF-Datei mittels PaddleOCR.
+    
+    Diese Funktion nutzt PaddleOCR für die direkte PDF-Verarbeitung
+    ohne vorherige PNG-Konvertierung. Sie behandelt OCRResult-Objekte
+    und extrahiert strukturierten Text pro Seite.
+    
     Args:
-        pdf_path: Path to the PDF file
-        lang: Language for PaddleOCR
-
+        pdf_path (str): Pfad zur PDF-Datei
+        lang (str, optional): Sprache für PaddleOCR. Defaults to 'german'.
+        
     Returns:
-        List of text strings (one per page)
+        List[str]: Liste von erkanntem Text pro Seite
+        
+    Raises:
+        ImportError: Wenn PaddleOCR nicht installiert ist
+        Exception: Bei PDF-Verarbeitungsfehlern
+
     """
     if PaddleOCR is None:
         logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")

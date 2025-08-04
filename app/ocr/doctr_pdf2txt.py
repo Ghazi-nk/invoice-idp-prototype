@@ -1,5 +1,14 @@
 """
-DocTr OCR-Modul für PDF-Dokumente.
+DocTR OCR-Engine für professionelle Dokumentenverarbeitung.
+
+Dieses Modul implementiert die Integration von Mindee DocTR (Document Text Recognition),
+einer modernen OCR-Engine die speziell für Geschäftsdokumente entwickelt wurde.
+DocTR bietet direkte PDF-Verarbeitung mit layout-bewusster Texterkennung.
+
+Autor: Ghazi Nakkash
+Projekt: Konzeption und prototypische Implementierung einer KI-basierten und 
+         intelligenten Dokumentenverarbeitung im Rechnungseingangsprozess
+Institution: Hochschule für Technik und Wirtschaft Berlin
 """
 import logging
 from typing import List, Dict, Any, Union
@@ -14,13 +23,21 @@ logger = logging.getLogger("doctr_pdf2txt")
 
 def doctr_pdf_to_text(pdf_path: str) -> List[str]:
     """
-    Run DocTr OCR auf einer PDF-Datei und gibt reinen Text zurück.
+    Führt DocTR OCR auf einer PDF-Datei durch und extrahiert strukturierten Text.
+    
+    Diese Funktion verwendet Mindee DocTR für direkte PDF-Verarbeitung
+    mit layout-bewusster Texterkennung. Sie extrahiert Text aus Blöcken
+    und Linien und organisiert ihn nach Seiten.
     
     Args:
-        pdf_path: Pfad zur PDF-Datei
+        pdf_path (str): Pfad zur PDF-Datei
     
     Returns:
-        Liste von Strings (einer pro Seite) mit reinem Text
+        List[str]: Liste von Textinhalten pro Seite
+        
+    Raises:
+        Exception: Bei PDF-Verarbeitungsfehlern oder DocTR-Fehlern
+
     """
     try:
         # 1. OCR durchführen
