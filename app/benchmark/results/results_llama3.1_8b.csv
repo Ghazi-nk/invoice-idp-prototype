@@ -1,0 +1,7 @@
+pipeline,mean_ollama_duration,mean_processing_duration,mean_accuracy,mean_precision,mean_recall,mean_f1,mean_total_duration,success_rate
+doctr,13.194,43.196,0.682,0.691,0.663,0.673,56.39,0.313
+easyocr,25.371,245.4,0.693,0.704,0.679,0.687,270.772,0.373
+layoutlm,17.818,6.781,0.667,0.692,0.641,0.663,24.599,0.325
+paddleocr,16.93,67.891,0.706,0.72,0.69,0.702,84.82,0.337
+searchable,16.657,0.081,0.676,0.692,0.651,0.665,16.738,0.269
+tesseract,12.964,6.444,0.706,0.721,0.694,0.704,19.407,0.337
