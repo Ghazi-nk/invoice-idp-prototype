@@ -58,7 +58,7 @@ CHAT_ENDPOINT = f"{OLLAMA_BASE_URL}/api/chat" if OLLAMA_BASE_URL else None
 # --- File storage paths ---
 # =============================================================================
 # Temporary directory for processing
-TMP_DIR = str(PROJECT_ROOT / 'app' / 'results' / 'tmp')
+TMP_DIR = str(PROJECT_ROOT / 'app' / 'tmp')
 
 # =============================================================================
 # --- Benchmark Configuration ---
