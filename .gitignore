@@ -22,9 +22,5 @@ app/ocr_ollama/input/
 app/results/tmp/
 app/results/reports/
 
-app/benchmark/archive
-app/benchmark/invoices
-app/benchmark/labels
-# Ignore Tesseract/OCR artifacts
 app/tmp/*.png
 app/tmp/*.txt
