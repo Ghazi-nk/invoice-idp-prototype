@@ -1,0 +1,11 @@
+field,doctr,easyocr,layoutlm,paddleocr,searchable,tesseract,average,best_pipeline,best_score
+currency,1.0,1.0,1.0,1.0,1.0,1.0,1.0,doctr,1.0
+iban,0.833,0.833,0.667,0.667,1.0,0.833,0.8055,searchable,1.0
+invoice_date,0.833,0.833,0.833,0.833,1.0,0.833,0.8608333333333333,searchable,1.0
+invoice_number,1.0,1.0,1.0,1.0,1.0,1.0,1.0,doctr,1.0
+purchase_order_number,1.0,0.833,1.0,1.0,1.0,1.0,0.9721666666666667,doctr,1.0
+recipient_name,0.5,0.333,0.333,0.5,0.4,0.667,0.45549999999999996,tesseract,0.667
+tax_rate,1.0,0.833,1.0,1.0,1.0,1.0,0.9721666666666667,doctr,1.0
+total_amount,1.0,0.667,0.667,0.5,0.6,1.0,0.739,doctr,1.0
+ust-id,0.667,0.5,0.667,0.333,0.8,0.833,0.6333333333333334,tesseract,0.833
+vendor_name,0.667,0.833,0.833,0.667,0.8,1.0,0.7999999999999999,tesseract,1.0

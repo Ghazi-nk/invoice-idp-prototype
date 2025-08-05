@@ -1,0 +1,351 @@
+invoice,pipeline,field,expected,predicted,match,searchable
+BMRE-01,doctr,invoice_date,25.12.2025,25.11.2012,0,False
+BMRE-01,doctr,vendor_name,Firma Max Mustermann,Firmal Max Mustermann,0,False
+BMRE-01,doctr,invoice_number,1001,1001,1,False
+BMRE-01,doctr,recipient_name,Dietrich Müller,Muller,1,False
+BMRE-01,doctr,total_amount,2673.93,2673.93,1,False
+BMRE-01,doctr,currency,EUR,EUR,1,False
+BMRE-01,doctr,purchase_order_number,,,1,False
+BMRE-01,doctr,ust-id,,,1,False
+BMRE-01,doctr,iban,5550011,,0,False
+BMRE-01,doctr,tax_rate,19.0,19.0,1,False
+BMRE-01,paddleocr,invoice_date,25.12.2025,25.11.2012,0,False
+BMRE-01,paddleocr,vendor_name,Firma Max Mustermann,Firma Max Mustermann,1,False
+BMRE-01,paddleocr,invoice_number,1001,1001,1,False
+BMRE-01,paddleocr,recipient_name,Dietrich Müller,Dietrich Müller,1,False
+BMRE-01,paddleocr,total_amount,2673.93,2673.93,1,False
+BMRE-01,paddleocr,currency,EUR,EUR,1,False
+BMRE-01,paddleocr,purchase_order_number,,,1,False
+BMRE-01,paddleocr,ust-id,,DE21112,0,False
+BMRE-01,paddleocr,iban,5550011,DE11001100550011,0,False
+BMRE-01,paddleocr,tax_rate,19.0,19.0,1,False
+BMRE-01,easyocr,invoice_date,25.12.2025,25.11.2012,0,False
+BMRE-01,easyocr,vendor_name,Firma Max Mustermann,Firma Max Mustermann,1,False
+BMRE-01,easyocr,invoice_number,1001,1001,1,False
+BMRE-01,easyocr,recipient_name,Dietrich Müller,Dietrich Müller,1,False
+BMRE-01,easyocr,total_amount,2673.93,2673.93,1,False
+BMRE-01,easyocr,currency,EUR,EUR,1,False
+BMRE-01,easyocr,purchase_order_number,,,1,False
+BMRE-01,easyocr,ust-id,,,1,False
+BMRE-01,easyocr,iban,5550011,,0,False
+BMRE-01,easyocr,tax_rate,19.0,19.0,1,False
+BMRE-01,layoutlm,invoice_date,25.12.2025,25.11.2012,0,False
+BMRE-01,layoutlm,vendor_name,Firma Max Mustermann,Firma Max Mustermann,1,False
+BMRE-01,layoutlm,invoice_number,1001,1001,1,False
+BMRE-01,layoutlm,recipient_name,Dietrich Müller,Herr Muller,0,False
+BMRE-01,layoutlm,total_amount,2673.93,2673.93,1,False
+BMRE-01,layoutlm,currency,EUR,EUR,1,False
+BMRE-01,layoutlm,purchase_order_number,,,1,False
+BMRE-01,layoutlm,ust-id,,DE211112,0,False
+BMRE-01,layoutlm,iban,5550011,DE11001100100550011,0,False
+BMRE-01,layoutlm,tax_rate,19.0,19.0,1,False
+BRE-01,doctr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,doctr,vendor_name,Mustermann Malerei GmbH,"Max Mustermann, Mustermann Malerei GmbH.",0,True
+BRE-01,doctr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,doctr,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-01,doctr,total_amount,773.1,773.1,1,True
+BRE-01,doctr,currency,EUR,EUR,1,True
+BRE-01,doctr,purchase_order_number,,,1,True
+BRE-01,doctr,ust-id,DE12345678,DE12345678,1,True
+BRE-01,doctr,iban,1234567890,1234567890,1,True
+BRE-01,doctr,tax_rate,19.0,19.0,1,True
+BRE-01,tesseract,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,tesseract,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-01,tesseract,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,tesseract,recipient_name,Best Pinsel KG,"Best Pinsel KG, Frau Mag. Veronika Huber",0,True
+BRE-01,tesseract,total_amount,773.1,773.1,1,True
+BRE-01,tesseract,currency,EUR,EUR,1,True
+BRE-01,tesseract,purchase_order_number,,,1,True
+BRE-01,tesseract,ust-id,DE12345678,DE12345678,1,True
+BRE-01,tesseract,iban,1234567890,1234567890,1,True
+BRE-01,tesseract,tax_rate,19.0,19.0,1,True
+BRE-01,paddleocr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,paddleocr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-01,paddleocr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,paddleocr,recipient_name,Best Pinsel KG,"Frau Mag. Veronika Huber, Mustermann GmbH",0,True
+BRE-01,paddleocr,total_amount,773.1,773.1,1,True
+BRE-01,paddleocr,currency,EUR,EUR,1,True
+BRE-01,paddleocr,purchase_order_number,,,1,True
+BRE-01,paddleocr,ust-id,DE12345678,DE12345678,1,True
+BRE-01,paddleocr,iban,1234567890,1234567890,1,True
+BRE-01,paddleocr,tax_rate,19.0,19.0,1,True
+BRE-01,layoutlm,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,layoutlm,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-01,layoutlm,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,layoutlm,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-01,layoutlm,total_amount,773.1,773.1,1,True
+BRE-01,layoutlm,currency,EUR,EUR,1,True
+BRE-01,layoutlm,purchase_order_number,,,1,True
+BRE-01,layoutlm,ust-id,DE12345678,DE12345678,1,True
+BRE-01,layoutlm,iban,1234567890,xswqawdad1234567890,0,True
+BRE-01,layoutlm,tax_rate,19.0,19.0,1,True
+BRE-01,searchable,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,searchable,vendor_name,Mustermann Malerei GmbH,Best Pinsel KG,0,True
+BRE-01,searchable,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,searchable,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-01,searchable,total_amount,773.1,773.1,1,True
+BRE-01,searchable,currency,EUR,EUR,1,True
+BRE-01,searchable,purchase_order_number,,,1,True
+BRE-01,searchable,ust-id,DE12345678,DE12345678,1,True
+BRE-01,searchable,iban,1234567890,1234567890,1,True
+BRE-01,searchable,tax_rate,19.0,19.0,1,True
+BRE-01,easyocr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-01,easyocr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH-,1,True
+BRE-01,easyocr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-01,easyocr,recipient_name,Best Pinsel KG,Frau Veronika Huber,0,True
+BRE-01,easyocr,total_amount,773.1,773.1,1,True
+BRE-01,easyocr,currency,EUR,EUR,1,True
+BRE-01,easyocr,purchase_order_number,,,1,True
+BRE-01,easyocr,ust-id,DE12345678,DEl2345678,0,True
+BRE-01,easyocr,iban,1234567890,1234567890,1,True
+BRE-01,easyocr,tax_rate,19.0,19.0,1,True
+BRE-04,doctr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,doctr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-04,doctr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,doctr,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-04,doctr,total_amount,1031.1,1031.1,1,True
+BRE-04,doctr,currency,CHF,CHF,1,True
+BRE-04,doctr,purchase_order_number,,,1,True
+BRE-04,doctr,ust-id,DE12345678,DE12345678,1,True
+BRE-04,doctr,iban,,,1,True
+BRE-04,doctr,tax_rate,8.0,8.0,1,True
+BRE-04,tesseract,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,tesseract,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-04,tesseract,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,tesseract,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-04,tesseract,total_amount,1031.1,1031.1,1,True
+BRE-04,tesseract,currency,CHF,CHF,1,True
+BRE-04,tesseract,purchase_order_number,,,1,True
+BRE-04,tesseract,ust-id,DE12345678,DE12345678,1,True
+BRE-04,tesseract,iban,,,1,True
+BRE-04,tesseract,tax_rate,8.0,8.0,1,True
+BRE-04,paddleocr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,paddleocr,vendor_name,Mustermann Malerei GmbH,Mustermann GmbH ● Hauptstrasse 123 • 13507 Berlin,0,True
+BRE-04,paddleocr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,paddleocr,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-04,paddleocr,total_amount,1031.1,1031.1,1,True
+BRE-04,paddleocr,currency,CHF,CHF,1,True
+BRE-04,paddleocr,purchase_order_number,,,1,True
+BRE-04,paddleocr,ust-id,DE12345678,DE12345678,1,True
+BRE-04,paddleocr,iban,,,1,True
+BRE-04,paddleocr,tax_rate,8.0,8.0,1,True
+BRE-04,layoutlm,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,layoutlm,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-04,layoutlm,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,layoutlm,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-04,layoutlm,total_amount,1031.1,1031.1,1,True
+BRE-04,layoutlm,currency,CHF,CHF,1,True
+BRE-04,layoutlm,purchase_order_number,,,1,True
+BRE-04,layoutlm,ust-id,DE12345678,DE12345678,1,True
+BRE-04,layoutlm,iban,,,1,True
+BRE-04,layoutlm,tax_rate,8.0,8.0,1,True
+BRE-04,searchable,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,searchable,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH.,1,True
+BRE-04,searchable,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,searchable,recipient_name,Best Pinsel KG,Frau Mag. Veronika Huber,0,True
+BRE-04,searchable,total_amount,1031.1,1031.1,1,True
+BRE-04,searchable,currency,CHF,CHF,1,True
+BRE-04,searchable,purchase_order_number,,,1,True
+BRE-04,searchable,ust-id,DE12345678,DE12345678,1,True
+BRE-04,searchable,iban,,,1,True
+BRE-04,searchable,tax_rate,8.0,8.0,1,True
+BRE-05,doctr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,doctr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,doctr,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-05,doctr,total_amount,74.99,74.99,1,True
+BRE-05,doctr,currency,EUR,EUR,1,True
+BRE-05,doctr,purchase_order_number,,,1,True
+BRE-05,doctr,ust-id,ATU12345678,ATU123456781,0,True
+BRE-05,doctr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,doctr,tax_rate,20.0,20.0,1,True
+BRE-04,easyocr,invoice_date,06.11.2012,06.11.2012,1,True
+BRE-04,easyocr,vendor_name,Mustermann Malerei GmbH,Mustermann Malerei GmbH-,1,True
+BRE-04,easyocr,invoice_number,Re-21/2012,Re-21/2012,1,True
+BRE-04,easyocr,recipient_name,Best Pinsel KG,Frau Mag. Huber,0,True
+BRE-04,easyocr,total_amount,1031.1,1031.1,1,True
+BRE-04,easyocr,currency,CHF,CHF,1,True
+BRE-04,easyocr,purchase_order_number,,,1,True
+BRE-04,easyocr,ust-id,DE12345678,DEl2345678,0,True
+BRE-04,easyocr,iban,,,1,True
+BRE-04,easyocr,tax_rate,8.0,19.0,0,True
+BRE-05,tesseract,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,tesseract,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,tesseract,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,tesseract,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-05,tesseract,total_amount,74.99,74.99,1,True
+BRE-05,tesseract,currency,EUR,EUR,1,True
+BRE-05,tesseract,purchase_order_number,,,1,True
+BRE-05,tesseract,ust-id,ATU12345678,ATU12345678,1,True
+BRE-05,tesseract,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,tesseract,tax_rate,20.0,20.0,1,True
+BRE-05,paddleocr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,paddleocr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,paddleocr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,paddleocr,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-05,paddleocr,total_amount,74.99,62.49,0,True
+BRE-05,paddleocr,currency,EUR,EUR,1,True
+BRE-05,paddleocr,purchase_order_number,,,1,True
+BRE-05,paddleocr,ust-id,ATU12345678,,0,True
+BRE-05,paddleocr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,paddleocr,tax_rate,20.0,20.0,1,True
+BRE-05,layoutlm,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,layoutlm,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,layoutlm,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,layoutlm,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-05,layoutlm,total_amount,74.99,74.99,1,True
+BRE-05,layoutlm,currency,EUR,EUR,1,True
+BRE-05,layoutlm,purchase_order_number,,,1,True
+BRE-05,layoutlm,ust-id,ATU12345678,ATU12345678,1,True
+BRE-05,layoutlm,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,layoutlm,tax_rate,20.0,20.0,1,True
+BRE-05,searchable,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,searchable,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,searchable,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,searchable,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-05,searchable,total_amount,74.99,62.49,0,True
+BRE-05,searchable,currency,EUR,EUR,1,True
+BRE-05,searchable,purchase_order_number,,,1,True
+BRE-05,searchable,ust-id,ATU12345678,ATU12345678,1,True
+BRE-05,searchable,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,searchable,tax_rate,20.0,20.0,1,True
+BRE-05,easyocr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-05,easyocr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-05,easyocr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-05,easyocr,recipient_name,ABC GmbH,Herr Wolfram Svenske,0,True
+BRE-05,easyocr,total_amount,74.99,74.99,1,True
+BRE-05,easyocr,currency,EUR,EUR,1,True
+BRE-05,easyocr,purchase_order_number,,,1,True
+BRE-05,easyocr,ust-id,ATU12345678,ATU12345678,1,True
+BRE-05,easyocr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-05,easyocr,tax_rate,20.0,20.0,1,True
+BMRE-01,tesseract,invoice_date,25.12.2025,25.11.2012,0,False
+BMRE-01,tesseract,vendor_name,Firma Max Mustermann,Firma Max Mustermann,1,False
+BMRE-01,tesseract,invoice_number,1001,1001,1,False
+BMRE-01,tesseract,recipient_name,Dietrich Müller,Dietrich Müller,1,False
+BMRE-01,tesseract,total_amount,2673.93,2673.93,1,False
+BMRE-01,tesseract,currency,EUR,EUR,1,False
+BMRE-01,tesseract,purchase_order_number,,,1,False
+BMRE-01,tesseract,ust-id,,,1,False
+BMRE-01,tesseract,iban,5550011,,0,False
+BMRE-01,tesseract,tax_rate,19.0,19.0,1,False
+BRE-02,doctr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH,1,True
+BRE-02,doctr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-02,doctr,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-02,doctr,total_amount,74.99,62.49,0,True
+BRE-02,doctr,currency,EUR,EUR,1,True
+BRE-02,doctr,purchase_order_number,,,1,True
+BRE-02,doctr,ust-id,ATU12345678,ATU123456781,0,True
+BRE-02,doctr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,doctr,tax_rate,19.0,19.0,1,True
+BRE-02,easyocr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,easyocr,vendor_name,Mustermann GmbH,ABC GmbH,0,True
+BRE-02,easyocr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-02,easyocr,recipient_name,ABC GmbH,Herr Wolfram Svenske,0,True
+BRE-02,easyocr,total_amount,74.99,74.99,1,True
+BRE-02,easyocr,currency,EUR,EUR,1,True
+BRE-02,easyocr,purchase_order_number,,,1,True
+BRE-02,easyocr,ust-id,ATU12345678,ATU12345678,1,True
+BRE-02,easyocr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,easyocr,tax_rate,19.0,19.0,1,True
+BRE-02,tesseract,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,tesseract,vendor_name,Mustermann GmbH,USTERMANN GmbH.,0,True
+BRE-02,tesseract,invoice_number,Re-9/2020,,0,True
+BRE-02,tesseract,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-02,tesseract,total_amount,74.99,62.49,0,True
+BRE-02,tesseract,currency,EUR,EUR,1,True
+BRE-02,tesseract,purchase_order_number,,,1,True
+BRE-02,tesseract,ust-id,ATU12345678,ATU12345678,1,True
+BRE-02,tesseract,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,tesseract,tax_rate,19.0,19.0,1,True
+BRE-02,paddleocr,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,paddleocr,vendor_name,Mustermann GmbH,Max Mustermann,0,True
+BRE-02,paddleocr,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-02,paddleocr,recipient_name,ABC GmbH,ABC GmbH,1,True
+BRE-02,paddleocr,total_amount,74.99,62.49,0,True
+BRE-02,paddleocr,currency,EUR,EUR,1,True
+BRE-02,paddleocr,purchase_order_number,,,1,True
+BRE-02,paddleocr,ust-id,ATU12345678,,0,True
+BRE-02,paddleocr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,paddleocr,tax_rate,19.0,19.0,1,True
+BRE-02,layoutlm,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,layoutlm,vendor_name,Mustermann GmbH,USTERMANN Mustermann GmbH.,0,True
+BRE-02,layoutlm,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-02,layoutlm,recipient_name,ABC GmbH,ABC GmbH Herr Wolfram Svenske,0,True
+BRE-02,layoutlm,total_amount,74.99,62.49,0,True
+BRE-02,layoutlm,currency,EUR,EUR,1,True
+BRE-02,layoutlm,purchase_order_number,,,1,True
+BRE-02,layoutlm,ust-id,ATU12345678,ATU12345678,1,True
+BRE-02,layoutlm,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,layoutlm,tax_rate,19.0,19.0,1,True
+BRE-02,searchable,invoice_date,13.10.2020,13.10.2020,1,True
+BRE-02,searchable,vendor_name,Mustermann GmbH,ABC GmbH,0,True
+BRE-02,searchable,invoice_number,Re-9/2020,Re-9/2020,1,True
+BRE-02,searchable,recipient_name,ABC GmbH,"Herr Wolfram Svenske, Mustermann GmbH.",0,True
+BRE-02,searchable,total_amount,74.99,62.49,0,True
+BRE-02,searchable,currency,EUR,EUR,1,True
+BRE-02,searchable,purchase_order_number,,,1,True
+BRE-02,searchable,ust-id,ATU12345678,ATU12345678,1,True
+BRE-02,searchable,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-02,searchable,tax_rate,19.0,19.0,1,True
+BRE-03,doctr,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,doctr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,doctr,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,doctr,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,doctr,total_amount,367.5,308.82,0,True
+BRE-03,doctr,currency,EUR,EUR,1,True
+BRE-03,doctr,purchase_order_number,,,1,True
+BRE-03,doctr,ust-id,ATU12345678,ATU123456781,0,True
+BRE-03,doctr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-03,doctr,tax_rate,19.0,19.0,1,True
+BRE-03,tesseract,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,tesseract,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,tesseract,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,tesseract,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,tesseract,total_amount,367.5,367.5,1,True
+BRE-03,tesseract,currency,EUR,EUR,1,True
+BRE-03,tesseract,purchase_order_number,,,1,True
+BRE-03,tesseract,ust-id,ATU12345678,ATU12345678,1,True
+BRE-03,tesseract,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-03,tesseract,tax_rate,19.0,19.0,1,True
+BRE-03,paddleocr,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,paddleocr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,paddleocr,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,paddleocr,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,paddleocr,total_amount,367.5,367.5,1,True
+BRE-03,paddleocr,currency,EUR,EUR,1,True
+BRE-03,paddleocr,purchase_order_number,,,1,True
+BRE-03,paddleocr,ust-id,ATU12345678,,0,True
+BRE-03,paddleocr,iban,AT491700000122001632,,0,True
+BRE-03,paddleocr,tax_rate,19.0,19.0,1,True
+BRE-03,layoutlm,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,layoutlm,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,layoutlm,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,layoutlm,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,layoutlm,total_amount,367.5,308.82,0,True
+BRE-03,layoutlm,currency,EUR,EUR,1,True
+BRE-03,layoutlm,purchase_order_number,,,1,True
+BRE-03,layoutlm,ust-id,ATU12345678,ATU12345678,1,True
+BRE-03,layoutlm,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-03,layoutlm,tax_rate,19.0,19.0,1,True
+BRE-03,easyocr,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,easyocr,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,easyocr,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,easyocr,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,easyocr,total_amount,367.5,30882.0,0,True
+BRE-03,easyocr,currency,EUR,EUR,1,True
+BRE-03,easyocr,purchase_order_number,,,1,True
+BRE-03,easyocr,ust-id,ATU12345678,ATU12345678,1,True
+BRE-03,easyocr,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-03,easyocr,tax_rate,19.0,19.0,1,True
+BRE-03,searchable,invoice_date,12.03.2015,12.03.2015,1,True
+BRE-03,searchable,vendor_name,Mustermann GmbH,Mustermann GmbH.,1,True
+BRE-03,searchable,invoice_number,Re-2/2015,Re-2/2015,1,True
+BRE-03,searchable,recipient_name,Herr Dr. Hubert Brinkmann,Herr Dr. Hubert Brinkmann,1,True
+BRE-03,searchable,total_amount,367.5,367.5,1,True
+BRE-03,searchable,currency,EUR,EUR,1,True
+BRE-03,searchable,purchase_order_number,,,1,True
+BRE-03,searchable,ust-id,ATU12345678,ATU12345678,1,True
+BRE-03,searchable,iban,AT491700000122001632,AT491700000122001632,1,True
+BRE-03,searchable,tax_rate,19.0,19.0,1,True

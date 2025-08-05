@@ -20,6 +20,13 @@ Institution: Hochschule für Technik und Wirtschaft Berlin
 import pandas as pd
 from pathlib import Path
 import warnings
+import sys
+import os
+
+# Add project root to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from app.logging_config import analysis_logger
 
 warnings.filterwarnings('ignore')
 
@@ -41,30 +48,30 @@ class ComprehensiveResultsAnalyzer:
         else:
             self.benchmark_dir = Path(benchmark_dir)
             
-        self.results_dir = self.benchmark_dir / "results"
+        self.results_dir = self.benchmark_dir# / "results" todo: uncomment this
         
         # Lade Benchmark-Daten
         self.load_benchmark_data()
     
     def load_benchmark_data(self):
         """Lädt alle Benchmark-Daten."""
-        print("Lade Benchmark-Daten...")
+        analysis_logger.info("Lade Benchmark-Daten...")
         
         try:
             self.summary_df = pd.read_csv(self.results_dir / "summary_llama3.1_8b.csv")
             self.details_df = pd.read_csv(self.results_dir / "details_llama3.1_8b.csv")
             self.results_df = pd.read_csv(self.results_dir / "results_llama3.1_8b.csv")
-            print(f"Daten geladen: {len(self.summary_df)} Summary, {len(self.details_df)} Details, {len(self.results_df)} Results")
+            analysis_logger.info(f"Daten geladen: {len(self.summary_df)} Summary, {len(self.details_df)} Details, {len(self.results_df)} Results")
         except FileNotFoundError as e:
-            print(f"Fehler beim Laden der Daten: {e}")
-            print("Stelle sicher, dass die Benchmark-Ergebnisse vorhanden sind.")
+            analysis_logger.error(f"Fehler beim Laden der Daten: {e}")
+            analysis_logger.error("Stelle sicher, dass die Benchmark-Ergebnisse vorhanden sind.")
             raise
     
 
     
     def create_complete_invoice_analysis(self):
         """Erstellt complete_invoice_analysis.csv mit vollständiger Analyse."""
-        print("Erstelle vollständige Rechnungsanalyse...")
+        analysis_logger.info("Erstelle vollständige Rechnungsanalyse...")
         
         # Statistiken pro Rechnung direkt aus summary_df
         invoice_stats = self.summary_df.groupby('invoice').agg({
@@ -81,13 +88,13 @@ class ComprehensiveResultsAnalyzer:
         # Export
         output_file = self.results_dir / "complete_invoice_analysis.csv"
         invoice_stats.reset_index().to_csv(output_file, index=False)
-        print(f"Gespeichert: {output_file}")
+        analysis_logger.info(f"Gespeichert: {output_file}")
         
         return invoice_stats
     
     def create_field_performance_analysis(self):
         """Erstellt field_performance_analysis.csv mit feldspezifischer Analyse."""
-        print("Erstelle Feld-Performance-Analyse...")
+        analysis_logger.info("Erstelle Feld-Performance-Analyse...")
         
         # Gruppiere nach Pipeline und Feld (nur verfügbare Spalten verwenden)
         field_performance = self.details_df.groupby(['pipeline', 'field']).agg({
@@ -105,7 +112,7 @@ class ComprehensiveResultsAnalyzer:
         # Export
         output_file = self.results_dir / "field_performance_analysis.csv"
         field_pivot.to_csv(output_file)
-        print(f"Gespeichert: {output_file}")
+        analysis_logger.info(f"Gespeichert: {output_file}")
         
         return field_pivot
     
@@ -113,34 +120,31 @@ class ComprehensiveResultsAnalyzer:
     
     def generate_summary_statistics(self):
         """Generiert zusammenfassende Statistiken."""
-        print("Generiere Zusammenfassungsstatistiken...")
+        analysis_logger.info("Generiere Zusammenfassungsstatistiken...")
         
         # Pipeline-Performance
         pipeline_stats = self.results_df.set_index('pipeline')
         
-        print("\nPIPELINE-PERFORMANCE:")
-        print("=" * 50)
+        analysis_logger.info("PIPELINE-PERFORMANCE:")
         for pipeline in pipeline_stats.index:
             row = pipeline_stats.loc[pipeline]
-            print(f"{pipeline:15s}: Acc={row['mean_accuracy']:.3f}, F1={row['mean_f1']:.3f}, Success={row['success_rate']:.3f}")
+            analysis_logger.info(f"{pipeline:15s}: Acc={row['mean_accuracy']:.3f}, F1={row['mean_f1']:.3f}, Success={row['success_rate']:.3f}")
         
         # Feld-Performance
         field_stats = self.details_df.groupby('field').agg({
             'match': 'mean'
         }).round(3).sort_values('match', ascending=False)
         
-        print("\nFELD-PERFORMANCE (Top 5):")
-        print("=" * 50)
+        analysis_logger.info("FELD-PERFORMANCE (Top 5):")
         for field in field_stats.head().index:
             row = field_stats.loc[field]
-            print(f"{field:20s}: Match={row['match']:.3f}")
+            analysis_logger.info(f"{field:20s}: Match={row['match']:.3f}")
         
 
     
     def run_complete_analysis(self):
         """Führt die komplette Analyse durch und erstellt alle CSV-Dateien."""
-        print("STARTE UMFASSENDE BENCHMARK-ANALYSE")
-        print("=" * 60)
+        analysis_logger.info("STARTE UMFASSENDE BENCHMARK-ANALYSE")
         
         try:
             # 1. Vollständige Rechnungsanalyse
@@ -152,16 +156,15 @@ class ComprehensiveResultsAnalyzer:
             # 3. Zusammenfassende Statistiken
             self.generate_summary_statistics()
             
-            print("\nANALYSE ERFOLGREICH ABGESCHLOSSEN")
-            print("=" * 60)
-            print("Generierte CSV-Dateien:")
-            print(f"   - {self.results_dir}/complete_invoice_analysis.csv")
-            print(f"   - {self.results_dir}/field_performance_analysis.csv")
+            analysis_logger.info("ANALYSE ERFOLGREICH ABGESCHLOSSEN")
+            analysis_logger.info("Generierte CSV-Dateien:")
+            analysis_logger.info(f"   - {self.results_dir}/complete_invoice_analysis.csv")
+            analysis_logger.info(f"   - {self.results_dir}/field_performance_analysis.csv")
             
             return True
             
         except Exception as e:
-            print(f"\nFEHLER WÄHREND DER ANALYSE: {e}")
+            analysis_logger.error(f"FEHLER WÄHREND DER ANALYSE: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -169,20 +172,18 @@ class ComprehensiveResultsAnalyzer:
 
 def main():
     """Hauptfunktion zur Ausführung der kompletten Analyse."""
-    print("COMPREHENSIVE RESULTS ANALYSIS")
-    print("=" * 60)
-    print("Erstellt alle finalen CSV-Ergebnisse für die Bachelor-Arbeit")
-    print()
+    analysis_logger.info("COMPREHENSIVE RESULTS ANALYSIS")
+    analysis_logger.info("Erstellt alle finalen CSV-Ergebnisse für die Bachelor-Arbeit")
     
     # Erstelle Analyzer und führe Analyse durch
     analyzer = ComprehensiveResultsAnalyzer()
     success = analyzer.run_complete_analysis()
     
     if success:
-        print("\nAlle Analysen erfolgreich abgeschlossen.")
-        print("Die CSV-Dateien sind bereit für die wissenschaftliche Auswertung.")
+        analysis_logger.info("Alle Analysen erfolgreich abgeschlossen.")
+        analysis_logger.info("Die CSV-Dateien sind bereit für die wissenschaftliche Auswertung.")
     else:
-        print("\nAnalyse mit Fehlern beendet. Bitte Logs prüfen.")
+        analysis_logger.error("Analyse mit Fehlern beendet. Bitte Logs prüfen.")
         return 1
     
     return 0
