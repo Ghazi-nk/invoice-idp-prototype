@@ -21,12 +21,9 @@ Projekt: Konzeption und prototypische Implementierung einer KI-basierten und
 Institution: Hochschule für Technik und Wirtschaft Berlin
 """
 
-import logging
 from typing import Optional, List
 
-
 from fastapi import FastAPI, HTTPException
-
 from pydantic import BaseModel, Field
 
 # --- Main pipeline functions ---
@@ -35,10 +32,7 @@ from app.pipeline import extract_invoice_fields_from_pdf
 from app.ocr.ocr_manager import ocr_pdf, get_available_engines
 from app.ocr.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields, ollama_process_with_custom_prompt
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("api_server")
+from app.logging_config import api_logger
 
 # --- API Setup ---
 app = FastAPI(
@@ -148,9 +142,7 @@ class InvoiceExtractionResponse(BaseModel):
 # --- API Endpoints ---
 # =============================================================================
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("invoice_api")
+# Logging is handled by central logging_config
 
 
 def select_engine(engine: Optional[str]) -> str:
@@ -170,7 +162,7 @@ def select_engine(engine: Optional[str]) -> str:
         return DEFAULT_ENGINE
     engine_to_use = engine.lower()
     if engine_to_use not in get_available_engines():
-        logger.warning(f"Invalid engine '{engine_to_use}' requested. Falling back to default.")
+        api_logger.warning(f"Invalid engine '{engine_to_use}' requested. Falling back to default.")
         return DEFAULT_ENGINE
     return engine_to_use
 
@@ -319,17 +311,17 @@ def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
     """
     try:
         extracted_data_tuple = ollama_extract_invoice_fields(request.ocr_pages)
-        logger.info(f"Extracted data tuple type: {type(extracted_data_tuple)}")
-        logger.info(f"Extracted data tuple length: {len(extracted_data_tuple) if hasattr(extracted_data_tuple, '__len__') else 'N/A'}")
+        api_logger.info(f"Extracted data tuple type: {type(extracted_data_tuple)}")
+        api_logger.info(f"Extracted data tuple length: {len(extracted_data_tuple) if hasattr(extracted_data_tuple, '__len__') else 'N/A'}")
         
         # Unpack the tuple to get just the dictionary (ignore the duration)
         extracted_data, duration = extracted_data_tuple
-        logger.info(f"Extracted data type: {type(extracted_data)}")
-        logger.info(f"Extracted data content: {extracted_data}")
+        api_logger.info(f"Extracted data type: {type(extracted_data)}")
+        api_logger.info(f"Extracted data content: {extracted_data}")
         
         # Ensure extracted_data is a dictionary
         if not isinstance(extracted_data, dict):
-            logger.error(f"Expected dict, got {type(extracted_data)}: {extracted_data}")
+            api_logger.error(f"Expected dict, got {type(extracted_data)}: {extracted_data}")
             raise ValueError(f"Expected dictionary from LLM extraction, got {type(extracted_data)}")
         
         # Map 'ust-id' to 'ust_id' for the model if needed
@@ -338,7 +330,7 @@ def llm_extract(request: LLMExtractRequest) -> InvoiceExtractionResponse:
         
         return InvoiceExtractionResponse(**extracted_data)
     except Exception as e:
-        logger.exception("Error in llm_extract endpoint:")
+        api_logger.exception("Error in llm_extract endpoint:")
         # Return a default response instead of raising an exception
         return InvoiceExtractionResponse(
             invoice_date="",
@@ -410,13 +402,13 @@ def handle_error(e: Exception):
         Loggt alle Fehler für Debugging und Monitoring.
     """
     if isinstance(e, HTTPException):
-        logger.error(f"HTTPException: {e.detail}")
+        api_logger.error(f"HTTPException: {e.detail}")
         raise e
     elif isinstance(e, FileNotFoundError):
-        logger.error(f"FileNotFoundError: {e}")
+        api_logger.error(f"FileNotFoundError: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     else:
-        logger.exception("An unexpected server error occurred:")
+        api_logger.exception("An unexpected server error occurred:")
         raise HTTPException(status_code=500, detail=f"An unexpected server error occurred: {e}")
 
 if __name__ == "__main__":

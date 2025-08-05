@@ -30,9 +30,7 @@ import fitz
 
 from app.config import TMP_DIR
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pdf_utils")
+from app.logging_config import pdf_logger
 
 @contextmanager
 def save_base64_to_temp_pdf(base64_string: str):
@@ -70,14 +68,14 @@ def save_base64_to_temp_pdf(base64_string: str):
             temp_file_path = temp_file.name
         yield temp_file_path
     except Exception as e:
-        logger.exception("Failed to save base64 PDF to temp file:")
+        pdf_logger.exception("Fehler beim Speichern der Base64-PDF als temporäre Datei:")
         raise
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
             try:
                 os.remove(temp_file_path)
             except Exception as e:
-                logger.warning(f"Failed to remove temp file {temp_file_path}: {e}")
+                pdf_logger.warning(f"Fehler beim Löschen der temporären Datei {temp_file_path}: {e}")
 
 def extract_text_if_searchable(pdf_path: str) -> list[str]:
     """
@@ -103,7 +101,7 @@ def extract_text_if_searchable(pdf_path: str) -> list[str]:
     try:
         doc = fitz.open(pdf_path)
     except Exception as e:
-        logger.exception(f"Could not open PDF: {pdf_path}")
+        pdf_logger.exception(f"PDF konnte nicht geöffnet werden: {pdf_path}")
         raise RuntimeError(f"Could not open PDF: {e}")
     page_texts = []
     for page in doc:
@@ -139,7 +137,7 @@ def pdf_to_png_with_pymupdf(pdf_path: str, zoom: float = 3.0) -> list[str]:
     try:
         doc = fitz.open(pdf_path)
         if doc.page_count == 0:
-            logger.error(f"Keine Seiten in PDF: {pdf_path}")
+            pdf_logger.error(f"Keine Seiten in PDF: {pdf_path}")
             raise RuntimeError(f"Keine Seiten in PDF: {pdf_path}")
         base = os.path.splitext(os.path.basename(pdf_path))[0]
         png_paths = []
@@ -151,5 +149,5 @@ def pdf_to_png_with_pymupdf(pdf_path: str, zoom: float = 3.0) -> list[str]:
             png_paths.append(png_path)
         return png_paths
     except Exception as e:
-        logger.exception(f"Failed to convert PDF to PNGs with PyMuPDF: {pdf_path}")
+        pdf_logger.exception(f"Fehler bei PDF-zu-PNG-Konvertierung mit PyMuPDF: {pdf_path}")
         raise

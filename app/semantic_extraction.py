@@ -32,6 +32,7 @@ from app.config import (
     PDF_QUERY_SYSTEM_PROMPT,
     PDF_QUERY_USER_PROMPT
 )
+from app.logging_config import semantic_logger
 
 
 def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
@@ -99,7 +100,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
     # Suppress warnings
     warnings.filterwarnings("ignore")
     
-    print(f"Sending {len(messages)} messages ({num_pages} pages) to the chat model...")
+    semantic_logger.info(f"Sende {len(messages)} Nachrichten ({num_pages} Seiten) an das Chat-Modell")
     ollama_start_time = time.perf_counter()
     resp = requests.post(CHAT_ENDPOINT, json=body, verify=False, timeout=600)
     ollama_duration = time.perf_counter() - ollama_start_time
@@ -113,7 +114,7 @@ def ollama_extract_invoice_fields(ocr_pages: List[str]) -> Tuple[Dict, float]:
     except (AttributeError, KeyError):
         raise ValueError("Ollama chat response is not in the expected format.")
 
-    print(f"Ollama response: {raw_content}")
+    semantic_logger.debug(f"Ollama Antwort: {raw_content}")
     json_chunk = _extract_first_complete_json(raw_content)
 
     if not json_chunk:
@@ -157,7 +158,7 @@ def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
     except FileNotFoundError as e:
         # Fall back to a generic system prompt if the file is missing
         system_prompt = "You are a helpful assistant for document processing."
-        print(f"Warning: Could not find PDF query system prompt file: {e}")
+        semantic_logger.warning(f"PDF-Query System-Prompt-Datei nicht gefunden: {e}")
     
     # Build the message list with the system prompt
     messages = [
@@ -180,7 +181,7 @@ def ollama_process_with_custom_prompt(ocr_pages: List[str], prompt: str) -> str:
     except FileNotFoundError as e:
         # Fall back to just using the custom prompt if the file is missing
         final_prompt = prompt
-        print(f"Warning: Could not find PDF query user prompt file: {e}")
+        semantic_logger.warning(f"PDF-Query User-Prompt-Datei nicht gefunden: {e}")
 
     # Add the final user prompt
     messages.append({"role": "user", "content": final_prompt})

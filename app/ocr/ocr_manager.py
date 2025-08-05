@@ -26,7 +26,7 @@ from __future__ import annotations
 import os
 from typing import Callable, Dict, List
 
-import logging
+
 
 from app.ocr.doctr_pdf2txt import doctr_pdf_to_text
 from app.ocr.layoutlmv3_png2txt import layoutlm_image_to_text
@@ -34,11 +34,7 @@ from app.ocr.tesseract_ocr import tesseract_png_to_text
 from app.ocr.easyocr_engine import easyocr_png_to_text
 from app.ocr.paddle_ocr import paddleocr_pdf_to_text
 from app.ocr.pdf_utils import pdf_to_png_with_pymupdf
-
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("ocr_manager")
+from app.logging_config import ocr_logger
 
 
 def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable) -> List[str] | None:
@@ -59,7 +55,7 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable) -> List[str] | N
     """
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
     ocr_engine_name = ocr_function.__name__
-    logger.info(f"Verarbeite '{base_name}.pdf' mit der Engine '{ocr_engine_name}'…")
+    ocr_logger.info(f"Verarbeite '{base_name}.pdf' mit der Engine '{ocr_engine_name}'…")
     pages_content = []
     try:
         png_pages: List[str] = pdf_to_png_with_pymupdf(pdf_path)
@@ -67,10 +63,10 @@ def process_pdf_with_ocr(pdf_path: str, ocr_function: Callable) -> List[str] | N
             page_num = i + 1
             extracted_content = ocr_function(png_page)
             pages_content.append(extracted_content)
-            logger.info(f"Seite {page_num} von '{base_name}.pdf' erfolgreich verarbeitet.")
+            ocr_logger.info(f"Seite {page_num} von '{base_name}.pdf' erfolgreich verarbeitet.")
         return pages_content
     except Exception as e:
-        logger.exception(f"Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
+        ocr_logger.exception(f"Ein Fehler ist bei der Verarbeitung von '{base_name}.pdf' mit '{ocr_engine_name}' aufgetreten: {e}")
         return None
 
 
@@ -121,7 +117,7 @@ def layoutlm_process_pdf(pdf_path: str) -> List[str] | None:
                 
         return results
     except Exception as e:
-        logger.exception(f"Fehler bei LayoutLM für '{pdf_path}': {e}")
+        ocr_logger.exception(f"Fehler bei LayoutLM für '{pdf_path}': {e}")
         return None
 
 def doctr_process_pdf(pdf_path: str) -> List[str] | None:
@@ -143,7 +139,7 @@ def doctr_process_pdf(pdf_path: str) -> List[str] | None:
     try:
         return doctr_pdf_to_text(pdf_path)
     except Exception as e:
-        logger.exception(f"Fehler bei Doctr OCR für '{pdf_path}': {e}")
+        ocr_logger.exception(f"Fehler bei Doctr OCR für '{pdf_path}': {e}")
         return None
 
 def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
@@ -163,7 +159,7 @@ def paddleocr_process_pdf(pdf_path: str) -> List[str] | None:
     try:
         return paddleocr_pdf_to_text(pdf_path)
     except Exception as e:
-        logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}': {e}")
+        ocr_logger.exception(f"Fehler bei PaddleOCR für '{pdf_path}': {e}")
         return None
 
 # Engine-Mapping: Verbindet Engine-Namen mit ihren Verarbeitungsfunktionen
@@ -209,7 +205,7 @@ def ocr_pdf(pdf_path: str, *, engine: str = "paddleocr") -> List[str]:
     result = ocr_function(pdf_path)
     
     if result is None:
-        logger.error(f"OCR failed for '{pdf_path}' with engine '{engine}'. Returning empty list.")
+        ocr_logger.error(f"OCR failed for '{pdf_path}' with engine '{engine}'. Returning empty list.")
         return []
     
     return result

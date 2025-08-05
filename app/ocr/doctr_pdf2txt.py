@@ -16,9 +16,7 @@ from typing import List, Dict, Any, Union
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("doctr_pdf2txt")
+from app.logging_config import ocr_logger
 
 
 def doctr_pdf_to_text(pdf_path: str) -> List[str]:
@@ -81,5 +79,5 @@ def doctr_pdf_to_text(pdf_path: str) -> List[str]:
         return text_pages
             
     except Exception as e:
-        logger.exception(f"doctr_pdf_to_text failed for '{pdf_path}': {e}")
+        ocr_logger.exception(f"DocTR OCR fehlgeschlagen für '{pdf_path}': {e}")
         raise
