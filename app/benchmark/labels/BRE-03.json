@@ -1,0 +1,12 @@
+{
+  "invoice_date": "12.03.2015",
+  "vendor_name": "Mustermann GmbH",
+  "invoice_number": "Re-2/2015",
+  "recipient_name": "Herr Dr. Hubert Brinkmann",
+  "total_amount": 367.50,
+  "currency": "EUR",
+  "purchase_order_number": null,
+  "ust-id": "ATU12345678",
+  "iban": "AT491700000122001632",
+  "tax_rate": 19.0
+}
