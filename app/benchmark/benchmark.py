@@ -36,7 +36,7 @@ import statistics
 import sys
 import fitz
 
-from app.pipeline import extract_invoice_fields_from_pdf
+from app.pipeline import process_invoice
 from app.ocr.ocr_manager import get_available_engines
 from app.ocr.pdf_utils import extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields
@@ -145,7 +145,7 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
             total_duration = time.perf_counter() - start_time
             processing_duration = total_duration - ollama_duration
         else:
-            pred, ollama_duration, processing_duration = extract_invoice_fields_from_pdf(
+            pred, ollama_duration, processing_duration = process_invoice(
                 pdf_path=str(pdf_path),
                 engine=engine
             )

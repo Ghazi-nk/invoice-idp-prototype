@@ -21,10 +21,7 @@ from app.logging_config import ocr_logger
 def tesseract_png_to_text(png_path: str) -> str:
     """
     Extrahiert Text aus einem PNG-Bild mittels Tesseract OCR.
-    
-    #todo: tesseract engine nutzung und note dass dies aufm local machine installiert werden muss!
-    #todo: dies muss auch in die readme erwähnt werden!
-    
+
     Args:
         png_path (str): Pfad zur PNG-Bilddatei
     

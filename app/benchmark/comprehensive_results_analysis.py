@@ -48,7 +48,7 @@ class ComprehensiveResultsAnalyzer:
         else:
             self.benchmark_dir = Path(benchmark_dir)
             
-        self.results_dir = self.benchmark_dir# / "results" todo: uncomment this
+        self.results_dir = self.benchmark_dir / "results"
         
         # Lade Benchmark-Daten
         self.load_benchmark_data()

@@ -87,26 +87,6 @@ s    Führt die vollständige IDP-Pipeline für eine Rechnung durch.
     return final_dict, ollama_duration, processing_duration
 
 
-# Legacy alias for backward compatibility
-def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, float, float]: #todo: remove this function
-    """
-    Legacy-Alias für die process_invoice-Funktion.
-    
-    Diese Funktion wird aus Kompatibilitätsgründen bereitgestellt und leitet
-    Aufrufe an die neue process_invoice-Funktion weiter.
-    
-    Args:
-        pdf_path (str): Pfad zur zu verarbeitenden PDF-Datei
-        engine (str, optional): OCR-Engine für die Texterkennung. Defaults to "paddleocr".
-    
-    Returns:
-        Tuple[Dict, float, float]: Siehe process_invoice() für Details
-        
-    Note:
-        Diese Funktion ist deprecated. Verwenden Sie stattdessen process_invoice().
-    """
-    return process_invoice(pdf_path, engine=engine)
-
 
 if __name__ == "__main__":
     if not isinstance(SAMPLE_PDF_PATH, str) or not SAMPLE_PDF_PATH:

@@ -27,7 +27,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 # --- Main pipeline functions ---
-from app.pipeline import extract_invoice_fields_from_pdf
+from app.pipeline import process_invoice
 
 from app.ocr.ocr_manager import ocr_pdf, get_available_engines
 from app.ocr.pdf_utils import save_base64_to_temp_pdf, extract_text_if_searchable
@@ -194,7 +194,7 @@ def extract_data(request: BaseRequest) -> InvoiceExtractionResponse:
             if not temp_pdf_path:
                 raise HTTPException(status_code=400, detail="Invalid base64 string provided.")
 
-            extracted_data_tuple = extract_invoice_fields_from_pdf(
+            extracted_data_tuple = process_invoice(
                 pdf_path=temp_pdf_path,
                 engine=engine_to_use
             )
