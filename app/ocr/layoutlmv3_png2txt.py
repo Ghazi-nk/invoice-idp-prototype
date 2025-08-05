@@ -20,9 +20,7 @@ from PIL import Image
 from transformers import LayoutLMv3Processor
 import logging
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("layoutlmv3_png2txt")
+from app.logging_config import ocr_logger
 
 # Initialize processor once
 _PROCESSOR = LayoutLMv3Processor.from_pretrained("microsoft/layoutlmv3-large")
@@ -54,7 +52,7 @@ def layoutlm_image_to_text(image_path: str) -> str:
     try:
         # 1. Bild laden und mit LayoutLM verarbeiten
         if not os.path.isfile(image_path):
-            logger.error(f"Bild nicht gefunden: {image_path}")
+            ocr_logger.error(f"Bild nicht gefunden: {image_path}")
             raise FileNotFoundError(f"Datei nicht gefunden: {image_path}")
         
         image = Image.open(image_path).convert("RGB")
@@ -85,11 +83,11 @@ def layoutlm_image_to_text(image_path: str) -> str:
                             # Problematische Tokens überspringen
                             continue
             except Exception as e:
-                logger.warning(f"Fehler bei Tokenverarbeitung: {e}")
+                ocr_logger.warning(f"Fehler bei Tokenverarbeitung: {e}")
         
         # Falls keine Tokens extrahiert werden konnten
         if not tokens:
-            logger.warning(f"Keine Tokens für {image_path} extrahiert")
+            ocr_logger.warning(f"Keine Tokens für {image_path} extrahiert")
             return ""
         
         # 3. Tokens nach Zeilen gruppieren
@@ -175,5 +173,5 @@ def layoutlm_image_to_text(image_path: str) -> str:
         return plain_text
             
     except Exception as e:
-        logger.exception(f"LayoutLM OCR fehlgeschlagen für '{image_path}':")
+        ocr_logger.exception(f"LayoutLM OCR fehlgeschlagen für '{image_path}':")
         raise

@@ -11,15 +11,11 @@ Projekt: Konzeption und prototypische Implementierung einer KI-basierten und
 Institution: Hochschule für Technik und Wirtschaft Berlin
 """
 
-import logging
 import sys
 from typing import List
 
 from paddleocr import PaddleOCR
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("paddle_ocr")
+from app.logging_config import ocr_logger
 
 
 def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
@@ -43,13 +39,13 @@ def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
 
     """
     if PaddleOCR is None:
-        logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
+        ocr_logger.error("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
         raise ImportError("PaddleOCR is not installed. Please install with `pip install paddleocr paddlepaddle`.")
 
     # Initialize OCR
     ocr = PaddleOCR(use_angle_cls=False, lang=lang)
     results = ocr.predict(pdf_path) or []
-    logger.info(f"PaddleOCR detected content across {len(results)} pages")
+    ocr_logger.info(f"PaddleOCR detected content across {len(results)} pages")
 
     # Extract text
     page_texts = []
@@ -78,7 +74,7 @@ def paddleocr_pdf_to_text(pdf_path: str, lang: str = 'german') -> List[str]:
                     page_texts.append(page_text)
 
             except Exception as e:
-                logger.exception(f"Error processing OCRResult for page {page_idx+1}: {e}")
+                ocr_logger.exception(f"Error processing OCRResult for page {page_idx+1}: {e}")
 
     return page_texts
 
@@ -88,30 +84,29 @@ if __name__ == "__main__":
     import os
     
     if not SAMPLE_PDF_PATH:
-        logger.error("SAMPLE_PDF_PATH not set")
+        ocr_logger.error("SAMPLE_PDF_PATH not set")
         sys.exit(1)
         
     if not os.path.exists(SAMPLE_PDF_PATH):
-        logger.error(f"Sample PDF file not found: {SAMPLE_PDF_PATH}")
+        ocr_logger.error(f"Sample PDF file not found: {SAMPLE_PDF_PATH}")
         sys.exit(1)
         
-    print(f"Testing with sample PDF: {SAMPLE_PDF_PATH}")
+    ocr_logger.info(f"Testing with sample PDF: {SAMPLE_PDF_PATH}")
     
     try:
         # Test real PaddleOCR
-        print("\n=== Testing PaddleOCR extraction ===")
+        ocr_logger.info("Testing PaddleOCR extraction")
         texts = paddleocr_pdf_to_text(SAMPLE_PDF_PATH)
-        print(f"Extracted text from {len(texts)} pages with PaddleOCR")
+        ocr_logger.info(f"Extracted text from {len(texts)} pages with PaddleOCR")
         
         # Print first few pages
         if texts:
-            print("\nFirst page content preview:")
             preview = texts[0][:200] if len(texts[0]) > 200 else texts[0]
-            print(preview)
+            ocr_logger.info(f"First page content preview: {preview}")
         else:
-            print("No text found in the PDF. Check if PaddleOCR is installed and working correctly.")
+            ocr_logger.warning("No text found in the PDF. Check if PaddleOCR is installed and working correctly.")
             
     except Exception as e:
-        logger.exception(f"Error testing PaddleOCR: {e}")
+        ocr_logger.exception(f"Error testing PaddleOCR: {e}")
         
 

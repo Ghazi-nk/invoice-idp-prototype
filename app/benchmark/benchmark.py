@@ -36,15 +36,13 @@ import statistics
 import sys
 import fitz
 
-
 from app.pipeline import extract_invoice_fields_from_pdf
 from app.ocr.ocr_manager import get_available_engines
 from app.ocr.pdf_utils import extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields
-
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
-
 from app.benchmark.evaluation_utils import is_match, check_success
+from app.logging_config import benchmark_logger
 
 
 def get_pdf_page_count(pdf_path: str) -> int:
@@ -66,7 +64,7 @@ def get_pdf_page_count(pdf_path: str) -> int:
         doc.close()
         return page_count
     except Exception as e:
-        print(f"Error getting page count for {pdf_path}: {e}")
+        benchmark_logger.error(f"Error getting page count for {pdf_path}: {e}")
         return 0
 
 # --- Configuration for benchmark ---
@@ -78,13 +76,13 @@ from app.config import (
 
 # --- Ensure required config variables are set ---
 if INVOICES_DIR is None:
-    print("Error: INVOICES_DIR is not set.", file=sys.stderr)
+    benchmark_logger.error("INVOICES_DIR is not set.")
     sys.exit(1)
 if LABELS_DIR is None:
-    print("Error: LABELS_DIR is not set.", file=sys.stderr)
+    benchmark_logger.error("LABELS_DIR is not set.")
     sys.exit(1)
 if OLLAMA_MODEL is None:
-    print("Error: OLLAMA_MODEL is not set.", file=sys.stderr)
+    benchmark_logger.error("OLLAMA_MODEL is not set.")
     sys.exit(1)
 
 NUM_WORKERS = 2
@@ -131,7 +129,7 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
 
     engine_name = engine
     
-    print(f"  Processing '{base_name}.pdf' with '{engine_name}' (searchable={is_searchable})...")
+    benchmark_logger.info(f"Processing '{base_name}.pdf' with '{engine_name}' (searchable={is_searchable})...")
     try:
         start_time = time.perf_counter()
         with open(label_path, encoding="utf-8") as f:
@@ -197,11 +195,11 @@ def process_task(task_args: tuple, is_searchable: bool) -> dict | None:
         summary_row["success"] = int(check_success(gt, pred))
         summary_row["success"] = int(check_success(gt, pred))
 
-        print(f"  ✓ Finished '{base_name}.pdf' with '{engine_name}' in {total_duration}s.")
+        benchmark_logger.info(f"Finished '{base_name}.pdf' with '{engine_name}' in {total_duration}s.")
         return {"summary": summary_row, "details": detail_rows}
 
     except Exception as e:
-        print(f"  ✗ ERROR processing '{base_name}.pdf' with '{engine_name}': {e}")
+        benchmark_logger.error(f"ERROR processing '{base_name}.pdf' with '{engine_name}': {e}")
         return None
 
 
@@ -212,7 +210,7 @@ def process_task_with_args(args):
 def generate_final_results():
     """Calculates and saves the aggregated results for each pipeline."""
     if not os.path.exists(OUTPUT_SUMMARY_CSV):
-        print("Warning: summary.csv not found. Cannot generate final results.")
+        benchmark_logger.warning("summary.csv not found. Cannot generate final results.")
         return
 
     pipeline_metrics = collections.defaultdict(lambda: {
@@ -295,7 +293,7 @@ def main():
             next(reader, None)
             for row in reader:
                 if row: completed_work.add((row[0], row[1]))
-    print(f"Found {len(completed_work)} previously completed tasks.")
+    benchmark_logger.info(f"Found {len(completed_work)} previously completed tasks.")
 
     tasks_to_do = []
     all_pdfs = sorted(Path(INVOICES_DIR).glob("*.pdf"))
@@ -307,14 +305,14 @@ def main():
         base_name = pdf_path.stem
         label_path = Path(LABELS_DIR) / f"{base_name}.json"
         if not label_path.exists():
-            print(f"  ! Warning: No label file for '{base_name}.pdf'. Skipping.")
+            benchmark_logger.warning(f"No label file for '{base_name}.pdf'. Skipping.")
             continue
         # Determine if PDF is searchable
         try:
             text_pages = extract_text_if_searchable(str(pdf_path))
             is_searchable = any(page.strip() for page in text_pages)
         except Exception as e:
-            print(f"  ! Error checking if '{base_name}.pdf' is searchable: {e}")
+            benchmark_logger.error(f"Error checking if '{base_name}.pdf' is searchable: {e}")
             is_searchable = False
         pdf_searchable_map[base_name] = is_searchable
         
@@ -329,9 +327,9 @@ def main():
             tasks_to_do.append(((pdf_path, "searchable", label_path), True))
 
     if not tasks_to_do:
-        print("✓ No new tasks to process. Benchmark is up-to-date.")
+        benchmark_logger.info("No new tasks to process. Benchmark is up-to-date.")
     else:
-        print(f"Created {len(tasks_to_do)} new tasks to process.")
+        benchmark_logger.info(f"Created {len(tasks_to_do)} new tasks to process.")
         summary_exists = os.path.exists(OUTPUT_SUMMARY_CSV)
         details_exists = os.path.exists(OUTPUT_DETAIL_CSV)
 
@@ -356,28 +354,28 @@ def main():
             if not details_exists: detail_writer.writeheader()
 
             if NUM_WORKERS > 1:
-                print(f"\n▶ Running in PARALLEL mode with {NUM_WORKERS} workers...")
+                benchmark_logger.info(f"Running in PARALLEL mode with {NUM_WORKERS} workers...")
                 with multiprocessing.Pool(processes=NUM_WORKERS) as pool:
                     for result in pool.imap_unordered(process_task_with_args, tasks_to_do):
                         if result:
                             summary_writer.writerow(result["summary"])
                             detail_writer.writerows(result["details"])
             else:
-                print("\n▶ Running in SEQUENTIAL mode (invoice-centric)...")
+                benchmark_logger.info("Running in SEQUENTIAL mode (invoice-centric)...")
                 tasks_by_pdf = collections.defaultdict(list)
                 for task in tasks_to_do:
                     tasks_by_pdf[task[0][0]].append(task)
                 for pdf_path, pdf_tasks in sorted(tasks_by_pdf.items()):
-                    print(f"\n-- Processing PDF: {pdf_path.name} --")
+                    benchmark_logger.info(f"Processing PDF: {pdf_path.name}")
                     for task in pdf_tasks:
                         result = process_task(*task)
                         if result:
                             summary_writer.writerow(result["summary"])
                             detail_writer.writerows(result["details"])
 
-    print(f"\n✓ Benchmark complete.")
+    benchmark_logger.info("Benchmark complete.")
     generate_final_results()
-    print(f"✓ Final results summary generated at {OUTPUT_RESULTS_CSV}")
+    benchmark_logger.info(f"Final results summary generated at {OUTPUT_RESULTS_CSV}")
 
 
 if __name__ == "__main__":

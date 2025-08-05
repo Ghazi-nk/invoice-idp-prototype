@@ -20,17 +20,11 @@ import os
 import time
 from typing import Dict, Tuple
 
-import logging
-
 from app.ocr.ocr_manager import ocr_pdf
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 from app.config import SAMPLE_PDF_PATH
 from app.semantic_extraction import ollama_extract_invoice_fields
-
-
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pipeline")
+from app.logging_config import pipeline_logger
 
 
 def process_invoice(pdf_path: str, *, engine: str = "paddleocr") -> Tuple[Dict, float, float]:
@@ -65,7 +59,7 @@ s    Führt die vollständige IDP-Pipeline für eine Rechnung durch.
     start_time = time.perf_counter()
     
     pages_raw_content = ocr_pdf(pdf_path, engine=engine)
-    logger.info(f"OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_content)} Seiten gefunden.")
+    pipeline_logger.info(f"OCR für '{os.path.basename(pdf_path)}' mit '{engine}' abgeschlossen. {len(pages_raw_content)} Seiten gefunden.")
 
     # Handle plain text content directly
     final_text_parts = []
@@ -74,11 +68,11 @@ s    Führt die vollständige IDP-Pipeline für eine Rechnung durch.
             final_text_parts.append(page_text)
     
     if not final_text_parts:
-        logger.error(f"No text content extracted from {pdf_path} with engine {engine}")
+        pipeline_logger.error(f"No text content extracted from {pdf_path} with engine {engine}")
         raise ValueError("No text content was extracted from the PDF.")
         
-    logger.info(f"Extracted {len(final_text_parts)} pages of text content")
-    logger.info(f"Gekürzte Vorschau des Textes: '{(' '.join(final_text_parts))[:200]}...'")
+    pipeline_logger.info(f"Extracted {len(final_text_parts)} pages of text content")
+    pipeline_logger.info(f"Gekürzte Vorschau des Textes: '{(' '.join(final_text_parts))[:200]}...'")
 
     # Extract fields using LLM without bbox
     llm_output, ollama_duration = ollama_extract_invoice_fields(final_text_parts)
@@ -116,7 +110,7 @@ def extract_invoice_fields_from_pdf(pdf_path: str, *, engine: str = "paddleocr")
 
 if __name__ == "__main__":
     if not isinstance(SAMPLE_PDF_PATH, str) or not SAMPLE_PDF_PATH:
-        logger.error("SAMPLE_PDF_PATH is not set or is not a string. Please check your configuration.")
+        pipeline_logger.error("SAMPLE_PDF_PATH is not set or is not a string. Please check your configuration.")
     else:
-        logger.info("\n=== Pipeline demo (Doctr) ===")
+        pipeline_logger.info("\n=== Pipeline demo (Doctr) ===")
         fields = process_invoice(SAMPLE_PDF_PATH, engine="doctr") 

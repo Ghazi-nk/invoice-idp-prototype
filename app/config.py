@@ -19,6 +19,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from pathlib import Path
+from app.logging_config import config_logger
 
 load_dotenv()
 
@@ -27,18 +28,18 @@ load_dotenv()
 # =============================================================================
 PROJECT_ROOT = Path(__file__).parent.parent
 RESOURCES_DIR = PROJECT_ROOT / 'resources'
-
+PROMPTS_DIR = RESOURCES_DIR / 'prompts'
 # =============================================================================
 # --- Prompt files for API endpoints ---
 # =============================================================================
 
 # Extract prompts (for invoice extraction endpoint)
-EXTRACT_PROMPTS_DIR = RESOURCES_DIR / 'extract_prompts'
+EXTRACT_PROMPTS_DIR = PROMPTS_DIR /'extract_prompts'
 EXTRACT_SYSTEM_PROMPT = str(EXTRACT_PROMPTS_DIR / 'system_prompt')
 EXTRACT_USER_PROMPT = str(EXTRACT_PROMPTS_DIR / 'user_prompt')
 
 # PDF Query prompts (for pdf-query endpoint)
-PDF_QUERY_PROMPTS_DIR = RESOURCES_DIR / 'pdf_query_prompts'
+PDF_QUERY_PROMPTS_DIR = PROMPTS_DIR /'pdf_query_prompts'
 PDF_QUERY_SYSTEM_PROMPT = str(PDF_QUERY_PROMPTS_DIR / 'system_prompt')
 PDF_QUERY_USER_PROMPT = str(PDF_QUERY_PROMPTS_DIR / 'user_prompt')
 
@@ -89,26 +90,26 @@ critical_vars = {
 
 for var_name, value in critical_vars.items():
     if not value:
-        print(f"Error: Critical configuration variable {var_name} is not set.", file=sys.stderr)
-        print(f"Please set {var_name} in your .env file or environment variables.", file=sys.stderr)
+        config_logger.error(f"Critical configuration variable {var_name} is not set.")
+        config_logger.error(f"Please set {var_name} in your .env file or environment variables.")
         sys.exit(1)
 
 # Validate CHAT_ENDPOINT after OLLAMA_BASE_URL validation
 if not CHAT_ENDPOINT:
-    print("Error: Could not construct CHAT_ENDPOINT from OLLAMA_BASE_URL.", file=sys.stderr)
+    config_logger.error("Could not construct CHAT_ENDPOINT from OLLAMA_BASE_URL.")
     sys.exit(1)
 
 # Check that prompt files exist
 for prompt_file in [EXTRACT_SYSTEM_PROMPT, EXTRACT_USER_PROMPT, PDF_QUERY_SYSTEM_PROMPT, PDF_QUERY_USER_PROMPT]:
     if not os.path.exists(prompt_file):
-        print(f"Warning: Prompt file not found at {prompt_file}", file=sys.stderr)
+        config_logger.warning(f"Prompt file not found at {prompt_file}")
 
 # Validation for benchmark and sample files
 if not Path(LABELS_DIR).exists():
-    print(f"Warning: Labels directory not found at {LABELS_DIR}. Benchmark functionality may be limited.", file=sys.stderr)
+    config_logger.warning(f"Labels directory not found at {LABELS_DIR}. Benchmark functionality may be limited.")
 if not Path(INVOICES_DIR).exists():
-    print(f"Warning: Invoices directory not found at {INVOICES_DIR}. Benchmark functionality may be limited.", file=sys.stderr)
+    config_logger.warning(f"Invoices directory not found at {INVOICES_DIR}. Benchmark functionality may be limited.")
 if not Path(SAMPLE_PDF_PATH).exists():
-    print(f"Warning: Sample PDF not found at {SAMPLE_PDF_PATH}. Some testing functionality may be limited.", file=sys.stderr)
+    config_logger.warning(f"Sample PDF not found at {SAMPLE_PDF_PATH}. Some testing functionality may be limited.")
 if not Path(SAMPLE_PNG_PATH).exists():
-    print(f"Warning: Sample PNG not found at {SAMPLE_PNG_PATH}. Some testing functionality may be limited.", file=sys.stderr)
+    config_logger.warning(f"Sample PNG not found at {SAMPLE_PNG_PATH}. Some testing functionality may be limited.")
