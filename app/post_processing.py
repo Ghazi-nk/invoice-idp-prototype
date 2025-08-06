@@ -255,12 +255,6 @@ def finalize_extracted_fields(data: Dict[str, Any]) -> Dict[str, Any]:
         elif ',' in name and any(char.isdigit() for char in name.split(',')[-1]):
             name = name.split(',')[0].strip()
             postprocessing_logger.info(f"Removed address from recipient name → '{name}'")
-        # Remove c/o and handelnd für phrases
-        elif 'handelnd für' in name.lower() or 'c/o' in name.lower():
-            # Extract only the first part before these phrases
-            parts = name.split('handelnd für')[0].split('c/o')[0]
-            name = parts.strip()
-            postprocessing_logger.info(f"Shortened recipient name to '{name}'")
         # Limit to 80 characters
         if len(name) > 80:
             name = name[:80].strip()
