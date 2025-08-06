@@ -42,6 +42,7 @@ from app.ocr.pdf_utils import extract_text_if_searchable
 from app.semantic_extraction import ollama_extract_invoice_fields
 from app.post_processing import finalize_extracted_fields, verify_and_correct_fields
 from app.benchmark.evaluation_utils import is_match, check_success
+from app.benchmark.comprehensive_results_analysis import ComprehensiveResultsAnalyzer
 from app.logging_config import benchmark_logger
 
 
@@ -376,6 +377,19 @@ def main():
     benchmark_logger.info("Benchmark complete.")
     generate_final_results()
     benchmark_logger.info(f"Final results summary generated at {OUTPUT_RESULTS_CSV}")
+    
+    # Execute comprehensive results analysis
+    try:
+        benchmark_logger.info("Starting comprehensive results analysis...")
+        analyzer = ComprehensiveResultsAnalyzer(str(BENCHMARK_DIR), MODEL_SAFE)
+        success = analyzer.run_complete_analysis()
+        if success:
+            benchmark_logger.info("Comprehensive results analysis completed successfully.")
+        else:
+            benchmark_logger.warning("Comprehensive results analysis completed with errors.")
+    except Exception as e:
+        benchmark_logger.error(f"Error during comprehensive results analysis: {e}")
+        benchmark_logger.warning("Benchmark completed successfully despite analysis errors.")
 
 
 if __name__ == "__main__":
