@@ -33,12 +33,13 @@ warnings.filterwarnings('ignore')
 class ComprehensiveResultsAnalyzer:
     """Umfassender Analyzer für alle Benchmark-Ergebnisse."""
     
-    def __init__(self, benchmark_dir: str = None):
+    def __init__(self, benchmark_dir: str = None, model_safe: str = None):
         """
         Initialisiert den Analyzer.
         
         Args:
             benchmark_dir: Pfad zum Benchmark-Verzeichnis
+            model_safe: Sicherer Model-Name für Dateinamen (z.B. "llama3.1_8b")
         """
         # Bestimme automatisch das richtige Verzeichnis
         if benchmark_dir is None:
@@ -48,7 +49,14 @@ class ComprehensiveResultsAnalyzer:
         else:
             self.benchmark_dir = Path(benchmark_dir)
             
-        self.results_dir = self.benchmark_dir / "results"
+        # Model-Name für Dateinamen
+        if model_safe is None:
+            self.model_safe = "llama3.1_8b"  # Fallback
+        else:
+            self.model_safe = model_safe
+            
+        # CSV-Dateien werden im gleichen Verzeichnis wie benchmark.py erstellt
+        self.results_dir = self.benchmark_dir
         
         # Lade Benchmark-Daten
         self.load_benchmark_data()
@@ -58,9 +66,9 @@ class ComprehensiveResultsAnalyzer:
         analysis_logger.info("Lade Benchmark-Daten...")
         
         try:
-            self.summary_df = pd.read_csv(self.results_dir / "summary_llama3.1_8b.csv")
-            self.details_df = pd.read_csv(self.results_dir / "details_llama3.1_8b.csv")
-            self.results_df = pd.read_csv(self.results_dir / "results_llama3.1_8b.csv")
+            self.summary_df = pd.read_csv(self.results_dir / f"summary_{self.model_safe}.csv")
+            self.details_df = pd.read_csv(self.results_dir / f"details_{self.model_safe}.csv")
+            self.results_df = pd.read_csv(self.results_dir / f"results_{self.model_safe}.csv")
             analysis_logger.info(f"Daten geladen: {len(self.summary_df)} Summary, {len(self.details_df)} Details, {len(self.results_df)} Results")
         except FileNotFoundError as e:
             analysis_logger.error(f"Fehler beim Laden der Daten: {e}")
