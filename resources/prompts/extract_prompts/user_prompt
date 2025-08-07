@@ -7,9 +7,22 @@ WARNUNG: Wenn der Text "Muster", "Test" oder "Example" enthält, ignoriere diese
 KRITISCH: 
 - vendor_name = Wer STELLT die Rechnung aus (Absender/Logo oben)
 - recipient_name = Wer ERHÄLT die Rechnung (Empfänger im Adressfeld)
+
+RECIPIENT_NAME FOCUS:
+- NIEMALS IBAN-Nummern (DE##...) als recipient_name!
+- NIEMALS Bankdaten oder BIC-Codes!
+- NIEMALS Geschäftsführer-Listen oder Personennamen!
+- Suche nach "An:", "Empfänger:", "Rechnungsempfänger:" im Text
+- Nur der HAUPTFIRMENNAME ohne Zusätze
+- Wenn mehrere Kandidaten → wähle den kürzesten, klarsten Firmennamen
 ### Aufgabe
-Extrahiere aus dem folgenden OCR-Rohtext **exakt** die zehn
-definierten Felder und gib sie als JSON-Objekt zurück.
+Für recipient_name folge diesen Schritten:
+1. Identifiziere den Briefkopf (Absender/Logo)
+2. Finde das Adressfeld direkt darunter
+3. Der erste Firmenname IM Adressfeld ist der recipient_name
+4. Ignoriere ALLE Inhalte nach "IBAN" oder "Konto"
+
+Extrahiere dann alle zehn Felder als JSON-Objekt.
 
 ### Regeln (Kurzfassung)
 1. Fehlende Werte → `null`, keine leeren Strings.

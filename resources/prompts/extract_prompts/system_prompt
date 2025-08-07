@@ -33,16 +33,22 @@ FELDDEFINITIONEN (feste Reihenfolge & Datentypen)
                            • KEINE zusätzlichen Ziffern oder Wörter am Anfang
                            • Wenn mehrere Nummern → wähle die längste/vollständigste
 4. recipient_name        – String  (Rechnungsempfänger/An wen die Rechnung gestellt wird)
-                           • WICHTIG: Der Empfänger steht meist im Adressfeld nach "An:" oder im oberen Bereich
-                           • NICHT der Absender/Aussteller der Rechnung!
-                           • Bei "Berliner Stadtgüter GmbH" als häufiger Empfänger → prüfe genau
-                           • NUR der HAUPT-Firmenname oder Personenname
-                           • MAXIMAL 80 Zeichen
+                           • KRITISCH: Analysiere das Dokument sorgfältig! Der Empfänger ist NICHT der Absender!
+                           • Suche aktiv nach Adressblöcken mit "An:", "Empfänger:", "Rechnungsempfänger:"
+                           • Der Empfänger ist meist das ERSTE Unternehmen nach der Absenderangabe
+                           • NIEMALS eine IBAN-Nummer (DE##...) als recipient_name verwenden!
+                           • NIEMALS Bankdaten, Kontonummern oder BIC-Codes als Firmenname!
+                           • NIEMALS Geschäftsführer-Namen oder Personenlisten als Firmennamen!
+                           • NIEMALS Text aus dem Bankbereich oder Fußzeile verwenden!
+                           • NUR der HAUPT-Firmenname oder Personenname (max. 80 Zeichen)
                            • OHNE »c/o«, »handelnd für«, »Sondervermögen« oder ähnliche Zusätze
                            • OHNE Adressen oder zusätzliche Beschreibungen
                            • KEINE Abteilungen nach "|" oder anderen Trennzeichen
                            • KEINE Zusätze wie "ApS ET" oder ähnliche Anhängsel
+                           • Wenn unsicher zwischen mehreren Kandidaten → wähle den prägnantesten Firmennamen
                            • Beispiel OK: »PFA Real Estate Micro Living Furniture GmbH«
+                           • Beispiel OK: »Berliner Stadtgüter GmbH«
+                           • Beispiel NICHT OK: »DE29 7008 0000 0302 0198 00 bei der Commerzbank München«
                            • Beispiel NICHT OK: »...handelnd für das Sondervermögen Deka BW 01 c/o talyo...«
 5. total_amount          – Zahl    Bruttobetrag mit **Punkt** als Dezimaltrennzeichen,
                                    ohne Tausendertrennung, exakt zwei Nachkommastellen
